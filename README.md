@@ -8,7 +8,7 @@
 | **One-Line Description** | *An institutional risk-management platform executing automated delta-neutral micro-hedging strategies via real-time Value-at-Risk computation, secured through role-based access control and comprehensive Basel-compliant audit logging.* (25 words) |
 | **Target Users & Problem Statement** | Hedge funds, quantitative trading desks, and asset managers face catastrophic capital drawdowns during flash crashes. Centurion eliminates human latency by continuously computing multi-asset market risk metrics and instating immediate, programmatically executed protection hedges. |
 | **Team Status** | Solo Project (Minimum 3 core enterprise features required; 4 core modules delivered) |
-| **Technology Stack** | **Frontend:** React / Next.js (TypeScript, TailwindCSS/Vanilla CSS, Recharts / Lightweight Charts)<br>**Backend:** Python FastAPI (Async ASGI event loop, NumPy/SciPy math engine)<br>**Relational Tier:** Azure SQL Database (Strict 3NF, Stored Procedures, Triggers, ACID Transactions)<br>**Semi-Structured Tier:** Azure Cosmos DB (High-throughput streaming market ticks)<br>**Unstructured Tier:** Azure Blob Storage (Audit reports, compliance statements, cold archives)<br>**Analytics & BI:** Microsoft Power BI Dashboard (DirectQuery/Import via Analytical SQL Views) |
+| **Technology Stack** | **Frontend:** React / Vite (TypeScript, Vanilla CSS Design System, Recharts / Lightweight Charts)<br>**Backend:** Python FastAPI (Async ASGI event loop, NumPy/SciPy math engine)<br>**Relational Tier:** Azure SQL Database (Strict 3NF, Stored Procedures, Triggers, ACID Transactions)<br>**Semi-Structured Tier:** Azure Cosmos DB (High-throughput streaming market ticks)<br>**Unstructured Tier:** Azure Blob Storage (Audit reports, compliance statements, cold archives)<br>**Analytics & BI:** Microsoft Power BI Dashboard (DirectQuery/Import via Analytical SQL Views) |
 | **Compliance Standard** | Basel III / FRTB (Fundamental Review of the Trading Book) Market Risk Guidelines, SOC 2 Type II Audit Trails, Zero-Trust Network Architecture |
 
 ---
@@ -18,7 +18,7 @@
 ```mermaid
 graph TD
     subgraph ClientTier ["Client Tier (Presentation & Governance)"]
-        UI["Enterprise React/Next.js SPA<br/>(Lightweight Trading Charts, Risk Dashboards)"]
+        UI["Enterprise React SPA<br/>(Centurion Light UI: Plus Jakarta Sans, Outfit, JetBrains Mono)"]
         BI["Microsoft Power BI Service<br/>(Rolling VaR, Drawdown & Hedge Analytics)"]
     end
 
@@ -72,6 +72,139 @@ graph TD
 
 ---
 
+## 📁 Repository Directory Structure
+
+```text
+Centurion/
+├── .github/
+│   └── workflows/
+│       └── ci.yml                         # Automated GitHub Actions test & build pipeline
+├── backend/                               # Modular Python FastAPI Risk Engine
+│   ├── app/
+│   │   ├── api/                           # Versioned API routes
+│   │   │   ├── router.py                  # API v1 aggregate router
+│   │   │   └── v1/
+│   │   │       ├── auth.py                # POST /api/v1/auth/register (Bcrypt 12 rounds)
+│   │   │       ├── risk.py                # GET /api/v1/risk/portfolio/{id} (SP & VaR)
+│   │   │       └── hedge.py               # POST /api/v1/hedge/execute (Atomic ACID block)
+│   │   ├── core/                          # Fundamental configuration, math & security
+│   │   │   ├── config.py                  # Environment settings & financial constants
+│   │   │   ├── risk_math.py               # Parametric VaR, Expected Shortfall, Basel scaling
+│   │   │   └── security.py                # Password hashing & JWT generation
+│   │   ├── models/                        # Pydantic v2 validation schemas & type guards
+│   │   │   ├── auth.py                    # User credentials & RBAC schemas
+│   │   │   ├── risk.py                    # Portfolio equity & risk metric schemas
+│   │   │   └── hedge.py                   # Programmatic hedge execution schemas
+│   │   ├── services/                      # Core business logic & storage interfaces
+│   │   │   ├── cosmos_service.py          # Cosmos DB point-read feed (/asset_ticker)
+│   │   │   ├── hedge_service.py           # Atomic multi-statement execution logic
+│   │   │   ├── risk_service.py            # Stored procedure runner & exposure recalculation
+│   │   │   └── storage_mock.py            # In-memory relational state (Azure SQL mock)
+│   │   └── main.py                        # FastAPI application factory
+│   ├── tests/
+│   │   └── test_api.py                    # Automated unit test suite (100% pass)
+│   ├── Dockerfile                         # Production backend container build
+│   ├── main.py                            # Root executable wrapper for uvicorn
+│   └── requirements.txt                   # Backend dependencies
+├── database/                              # Complete relational database architecture
+│   ├── schema.sql                         # Production DDL schema (3NF tables & indexes)
+│   ├── queries.sql                        # Stored procedures, triggers, ACID transactions
+│   ├── seeds.sql                          # Production seed accounts & tickers
+│   └── README.md                          # Database documentation & execution guide
+├── docs/                                  # Full institutional documentation suite (80/80 Rubric)
+│   ├── SYSTEM_DESIGN_DOCUMENT.md          # Mathematical formulas, SLA budgets & latency analysis
+│   ├── DATABASE_ARCHITECTURE.md           # Formal 1NF/2NF/3NF proofs & ER diagram
+│   ├── DATABASE_SPECIFICATION.sql         # Executable Azure SQL specification
+│   ├── CLOUD_INFRASTRUCTURE_AND_ANALYTICS.md # DP-900 multi-tier storage & Power BI DAX
+│   ├── SECURITY_AND_COMPLIANCE.md         # Zero-Trust RBAC matrix & BCBS 239 audit specs
+│   └── EVALUATION_CRITERIA_MAPPING.md     # Rubric compliance cross-reference
+├── frontend/                              # Institutional Light/White Theme React SPA
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── layout/                    # Global structural navigation & tickers
+│   │   │   │   ├── Navbar.jsx             # Top bar with role switcher & shock simulator
+│   │   │   │   ├── LiveTickerBar.jsx      # Streaming market ticks with sparklines
+│   │   │   │   └── Footer.jsx             # Compliance & compute specs footer
+│   │   │   ├── views/                     # 5 Primary operational views
+│   │   │   │   ├── RiskEngineView.jsx     # Live VaR, Expected Shortfall, Gaussian curve
+│   │   │   │   ├── RdbmsExplorerView.jsx  # 3NF table browser, SP & trigger runners
+│   │   │   │   ├── CloudAnalyticsView.jsx # DP-900 storage cards, drawdown charts, DAX modal
+│   │   │   │   ├── SecurityGovernanceView.jsx # Zero-trust RBAC matrix, Pydantic sandbox
+│   │   │   │   └── ApiTesterView.jsx      # Interactive FastAPI console & cURL generator
+│   │   │   └── index.js                   # Unified component exports
+│   │   ├── context/
+│   │   │   └── CenturionContext.jsx       # Global risk sentry state & stochastic market loop
+│   │   ├── index.css                      # Executive Light Theme design system
+│   │   ├── App.jsx                        # Main root layout
+│   │   └── main.jsx                       # React DOM entrypoint
+│   ├── Dockerfile                         # Production frontend container build
+│   ├── package.json                       # Dependencies & scripts
+│   └── vite.config.js                     # Vite build configuration
+├── scripts/                               # Operational developer scripts
+│   ├── run_dev.ps1                        # Launches backend & frontend concurrently (PowerShell)
+│   ├── run_dev.bat                        # Launches backend & frontend concurrently (Batch)
+│   └── test_all.ps1                       # Runs frontend build & backend tests
+├── docker-compose.yml                     # Multi-service container orchestration
+├── schema.sql                             # Root schema symlink / reference
+├── queries.sql                            # Root queries symlink / reference
+├── .gitignore                             # Clean repository ignore rules
+└── README.md                              # This document
+```
+
+---
+
+## 🚀 Quickstart & Execution Guide
+
+### Option 1: One-Click Startup (PowerShell / Batch)
+
+```powershell
+# Run the automated launch script
+.\scripts\run_dev.ps1
+```
+
+Or on Windows CMD:
+```cmd
+scripts\run_dev.bat
+```
+
+### Option 2: Manual Development Startup
+
+#### 1. Backend Engine
+```bash
+cd backend
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+```
+- Swagger Interactive API Docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+- Health Check: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
+
+#### 2. Frontend Web App
+```bash
+cd frontend
+npm install
+npm run dev
+```
+- Web Application: [http://127.0.0.1:5173/](http://127.0.0.1:5173/)
+
+### Option 3: Docker Compose Multi-Container Orchestration
+
+```bash
+docker-compose up --build
+```
+
+---
+
+## 🧪 Automated Testing & Validation
+
+```bash
+# Run backend test suite
+python backend/tests/test_api.py
+
+# Run frontend production build validation
+cd frontend && npm run build
+```
+
+---
+
 ## 📂 Deliverables Directory Index
 
 This repository contains the complete institutional design documentation suite for the **Design Runway Review**:
@@ -110,12 +243,5 @@ This repository contains the complete institutional design documentation suite f
 6. **[docs/EVALUATION_CRITERIA_MAPPING.md](docs/EVALUATION_CRITERIA_MAPPING.md)**
    - Comprehensive rubric cross-reference demonstrating full mark compliance (20/20 in all 4 categories: System Design, RDBMS Data Integrity, DP-900 Cloud Infrastructure & Analytics, Cloud Security & Zero-Trust).
 
-7. **[schema.sql](schema.sql)**
-   - Root production DDL script defining the 5 3NF relational tables (`users`, `portfolios`, `asset_holdings`, `market_tickers`, `hedging_orders`) and performance indexes.
-
-8. **[queries.sql](queries.sql)**
-   - Root database programmability objects: stored procedure `CalculatePortfolioExposure`, trigger `InitiateHedgingSignal`, and multi-statement atomic transaction block.
-
-9. **[backend/main.py](backend/main.py)**
-   - Production FastAPI backend runtime mapping `POST /api/v1/auth/register`, `GET /api/v1/risk/portfolio/{id}`, and `POST /api/v1/hedge/execute`.
-
+7. **[database/schema.sql](database/schema.sql)** & **[database/queries.sql](database/queries.sql)**
+   - Production relational DDL definitions and programmability objects.

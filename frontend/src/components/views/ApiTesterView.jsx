@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useCenturion } from '../context/CenturionContext';
+import { useCenturion } from '../../context/CenturionContext';
 import { 
   Terminal, 
   Send, 

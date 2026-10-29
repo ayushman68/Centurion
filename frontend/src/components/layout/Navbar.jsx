@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCenturion } from '../context/CenturionContext';
+import { useCenturion } from '../../context/CenturionContext';
 import { 
   Shield, 
   Activity, 
