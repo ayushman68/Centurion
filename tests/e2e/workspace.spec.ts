@@ -21,6 +21,7 @@ test("complete workspace journey, authorization, transactional sales and accessi
   await page.getByLabel("Portfolio name").fill("Core equity strategy");
   await page.getByLabel("Use sample positions").check();
   await page
+    .getByRole("dialog")
     .getByRole("button", { name: "Create portfolio", exact: true })
     .click();
   await expect(page.getByText("$1,299,300", { exact: true })).toBeVisible();
@@ -156,7 +157,9 @@ test("complete workspace journey, authorization, transactional sales and accessi
   await page.getByRole("button", { name: "Reduce TEST exposure" }).click();
   await page.getByLabel("Quantity to sell").fill("5");
   await page.getByRole("button", { name: "Confirm paper sale" }).click();
-  await expect(page.getByRole("status")).toContainText("Paper sale recorded");
+  await expect(
+    page.getByRole("status").filter({ hasText: "Paper sale recorded" }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Scenarios", exact: true }).click();
   await page.getByRole("button", { name: "-30% shock", exact: true }).click();
   await expect(page.getByText("-30%", { exact: true })).toBeVisible();
@@ -196,4 +199,9 @@ test("complete workspace journey, authorization, transactional sales and accessi
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await expect(page).toHaveURL(/login/);
   expect((await page.request.get(`/api/workspace/${id}`)).status()).toBe(401);
+  await page.getByLabel("Email address").fill(email);
+  await page.getByLabel("Password", {exact:true}).fill(password);
+  await page.getByRole("button", {name:"Sign in", exact:true}).click();
+  await expect(page).toHaveURL(/workspace/);
+  await expect(page.getByText("$1,299,300", {exact:true})).toBeVisible();
 });

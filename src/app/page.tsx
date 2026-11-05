@@ -11,6 +11,19 @@ export const metadata = { alternates: { canonical: "/" } };
 export default function Home() {
   return (
     <div className="landing">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: "Centurion",
+            url: process.env.BETTER_AUTH_URL || "http://localhost:3000",
+            description:
+              "A portfolio risk analysis and paper trading workspace.",
+          }).replace(/</g, "\\u003c"),
+        }}
+      />
       <header className="public-header">
         <Link href="/" aria-label="Centurion home">
           <Brand />

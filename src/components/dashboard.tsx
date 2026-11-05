@@ -280,6 +280,22 @@ export function Dashboard({ user }: { user: { name: string; email: string } }) {
             Workspace <span>/</span> <strong>{view}</strong>
           </div>
           <div className="topbar-right">
+            <button
+              className="icon-button mobile-signout"
+              aria-label="Sign out"
+              onClick={async () => {
+                try {
+                  const result = await authClient.signOut();
+                  if (result.error) throw new Error();
+                  router.replace("/login");
+                  router.refresh();
+                } catch {
+                  setError("Could not sign out. Try again.");
+                }
+              }}
+            >
+              <LogOut size={17} />
+            </button>
             <span className="mode-badge">
               <span /> PAPER ENVIRONMENT
             </span>
@@ -1083,7 +1099,12 @@ function Positions({
       />
     );
   return (
-    <div className="table-scroll">
+    <div
+      className="table-scroll"
+      tabIndex={0}
+      role="region"
+      aria-label="Scrollable portfolio records"
+    >
       <table>
         <thead>
           <tr>
@@ -1221,7 +1242,12 @@ function History({ id, kind }: { id: string; kind: "orders" | "audit" }) {
           }
         />
       ) : kind === "orders" ? (
-        <div className="table-scroll">
+        <div
+          className="table-scroll"
+          tabIndex={0}
+          role="region"
+          aria-label="Scrollable portfolio records"
+        >
           <table>
             <thead>
               <tr>

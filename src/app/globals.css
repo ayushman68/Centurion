@@ -1,4 +1,12 @@
 @import "tailwindcss";
+.mobile-signout {
+  display: none !important;
+}
+@media (max-width: 700px) {
+  .mobile-signout {
+    display: inline-flex !important;
+  }
+}
 :root {
   --ink: #192b30;
   --navy: #13292e;
@@ -752,7 +760,7 @@ small {
 .metric > small {
   font-size: 10px;
   display: block;
-  color: #6c7872;
+  color: #58665e;
 }
 .metric-dot {
   padding: 0 4px;
@@ -976,7 +984,7 @@ table {
 th {
   text-align: left;
   background: #fafbf8;
-  color: #6c7872;
+  color: #58665e;
   font-size: 9px;
   font-weight: 400;
   padding: 12px 23px;
@@ -1031,7 +1039,7 @@ tbody tr:last-child td {
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  color: #68776e;
+  color: #536359;
   font-size: 9px;
   padding: 23px 0 0;
 }
@@ -2038,4 +2046,9 @@ pre {
   .button:hover:not(:disabled) {
     transform: none;
   }
+}
+
+[tabindex]:focus-visible {
+  outline: 3px solid #a77d32;
+  outline-offset: -3px;
 }

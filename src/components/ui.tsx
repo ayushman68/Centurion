@@ -46,6 +46,7 @@ export function Modal({
   useEffect(() => {
     const dialog = ref.current;
     dialog?.showModal();
+    dialog?.querySelector<HTMLInputElement>("input")?.focus();
     return () => dialog?.close();
   }, []);
   return (
