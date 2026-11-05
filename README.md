@@ -1,247 +1,94 @@
-# Centurion: Enterprise Portfolio Risk Engine & Automated Micro-Hedging Platform
+# Centurion
 
-## 📋 Executive Project Registration Summary
+A portfolio-risk workspace with a responsive interface, PostgreSQL persistence, authenticated portfolio access, scenario analysis, and transactional **paper sales**. No broker is connected and no real trades execute. Sample portfolios and manual prices are explicitly labelled. No Basel, FRTB, SOC 2, investment-performance, or production-certification claims are made.
 
-| Field | Official Submission Content |
-| :--- | :--- |
-| **Project Title** | **Centurion: Enterprise Portfolio Risk Engine & Automated Micro-Hedging Platform** |
-| **One-Line Description** | *An institutional risk-management platform executing automated delta-neutral micro-hedging strategies via real-time Value-at-Risk computation, secured through role-based access control and comprehensive Basel-compliant audit logging.* (25 words) |
-| **Target Users & Problem Statement** | Hedge funds, quantitative trading desks, and asset managers face catastrophic capital drawdowns during flash crashes. Centurion eliminates human latency by continuously computing multi-asset market risk metrics and instating immediate, programmatically executed protection hedges. |
-| **Team Status** | Solo Project (Minimum 3 core enterprise features required; 4 core modules delivered) |
-| **Technology Stack** | **Frontend:** React / Vite (TypeScript, Vanilla CSS Design System, Recharts / Lightweight Charts)<br>**Backend:** Python FastAPI (Async ASGI event loop, NumPy/SciPy math engine)<br>**Relational Tier:** Azure SQL Database (Strict 3NF, Stored Procedures, Triggers, ACID Transactions)<br>**Semi-Structured Tier:** Azure Cosmos DB (High-throughput streaming market ticks)<br>**Unstructured Tier:** Azure Blob Storage (Audit reports, compliance statements, cold archives)<br>**Analytics & BI:** Microsoft Power BI Dashboard (DirectQuery/Import via Analytical SQL Views) |
-| **Compliance Standard** | Basel III / FRTB (Fundamental Review of the Trading Book) Market Risk Guidelines, SOC 2 Type II Audit Trails, Zero-Trust Network Architecture |
+## Stack and architecture
 
----
+Next.js App Router, TypeScript, Tailwind CSS with shared design tokens, PostgreSQL, node-postgres, Zod, Decimal.js, and Better Auth. One application handles rendering and APIs; no separate Python server, Redis, queue, or cloud storage is needed for this workload. Database migrations are plain SQL and are checksummed and advisory-locked. Core modules are in `src/lib`; the UI is in `src/components`; route handlers live in `src/app/api`.
 
-## 🏛️ System Architecture Topology
+The previous implementation is preserved in Git history. This replacement does not migrate prior Azure SQL data automatically. Do not point it at an existing production database without a separately reviewed data migration.
 
-```mermaid
-graph TD
-    subgraph ClientTier ["Client Tier (Presentation & Governance)"]
-        UI["Enterprise React SPA<br/>(Centurion Light UI: Plus Jakarta Sans, Outfit, JetBrains Mono)"]
-        BI["Microsoft Power BI Service<br/>(Rolling VaR, Drawdown & Hedge Analytics)"]
-    end
+## Local setup
 
-    subgraph SecurityGateway ["Security & Ingress Gateway"]
-        TLS["Strict TLS 1.3 / Reverse Proxy & WAF"]
-        JWT["OAuth2 / JWT Bearer Authentication & RBAC Engine"]
-    end
+Requires Node.js 22+ (24 tested), npm, and PostgreSQL 18 (or the included local development helper).
 
-    subgraph ComputeTier ["Core Compute Tier (Python FastAPI)"]
-        API["FastAPI Async REST / WebSocket Gateway"]
-        subgraph MathEngine ["Low-Latency Synchronous Memory Block"]
-            VaR["Parametric VaR & Expected Shortfall Engine (NumPy/SciPy)"]
-            CovMat["Rolling Asset Variance-Covariance Matrix"]
-            Hedger["Delta-Neutral Micro-Hedging Algorithmic Sentry"]
-        end
-    end
-
-    subgraph DataStorageTier ["Multi-Tier Azure Cloud Persistence (DP-900 Model)"]
-        subgraph StructuredStore ["Structured Store (Azure SQL Database)"]
-            T_Users["users (RBAC, Auth)"]
-            T_Portfolios["portfolios (Aggregated Equity, Margins)"]
-            T_Holdings["asset_holdings (Quantities, Buy Prices)"]
-            T_Tickers["market_tickers (Cached Valuations)"]
-            T_Orders["hedging_orders (Automated Trade Signals)"]
-            T_Audit["compliance_audit_ledger (Immutable Logs)"]
-            SP["SP: CalculatePortfolioExposure"]
-            TRG["TRG: InitiateHedgingSignal"]
-            TX["ACID Atomic Execution Block"]
-        end
-
-        subgraph SemiStructuredStore ["Semi-Structured Store (Azure Cosmos DB)"]
-            Cosmos["Cosmos DB (SQL API)<br/>Hot Streaming JSON Market Feeds<br/>Partition Key: /asset_ticker"]
-        end
-
-        subgraph UnstructuredStore ["Unstructured Store (Azure Blob Storage)"]
-            BlobHot["hot-compliance-reports (PDFs, Monthly Audits)"]
-            BlobArchive["cold-historical-eod-archives (Parquet/JSON WORM)"]
-        end
-    end
-
-    UI -->|WSS / HTTPS| TLS
-    TLS --> JWT
-    JWT --> API
-    API --> MathEngine
-    MathEngine -->|Sub-millisecond State Read/Write| StructuredStore
-    MathEngine -->|Order Event Dispatch| T_Orders
-    API -->|High-throughput Tick Ingestion| Cosmos
-    API -->|Async Export of Compliance PDF Statements| BlobHot
-    StructuredStore -->|DirectQuery / SQL Views| BI
-```
-
----
-
-## 📁 Repository Directory Structure
-
-```text
-Centurion/
-├── .github/
-│   └── workflows/
-│       └── ci.yml                         # Automated GitHub Actions test & build pipeline
-├── backend/                               # Modular Python FastAPI Risk Engine
-│   ├── app/
-│   │   ├── api/                           # Versioned API routes
-│   │   │   ├── router.py                  # API v1 aggregate router
-│   │   │   └── v1/
-│   │   │       ├── auth.py                # POST /api/v1/auth/register (Bcrypt 12 rounds)
-│   │   │       ├── risk.py                # GET /api/v1/risk/portfolio/{id} (SP & VaR)
-│   │   │       └── hedge.py               # POST /api/v1/hedge/execute (Atomic ACID block)
-│   │   ├── core/                          # Fundamental configuration, math & security
-│   │   │   ├── config.py                  # Environment settings & financial constants
-│   │   │   ├── risk_math.py               # Parametric VaR, Expected Shortfall, Basel scaling
-│   │   │   └── security.py                # Password hashing & JWT generation
-│   │   ├── models/                        # Pydantic v2 validation schemas & type guards
-│   │   │   ├── auth.py                    # User credentials & RBAC schemas
-│   │   │   ├── risk.py                    # Portfolio equity & risk metric schemas
-│   │   │   └── hedge.py                   # Programmatic hedge execution schemas
-│   │   ├── services/                      # Core business logic & storage interfaces
-│   │   │   ├── cosmos_service.py          # Cosmos DB point-read feed (/asset_ticker)
-│   │   │   ├── hedge_service.py           # Atomic multi-statement execution logic
-│   │   │   ├── risk_service.py            # Stored procedure runner & exposure recalculation
-│   │   │   └── storage_mock.py            # In-memory relational state (Azure SQL mock)
-│   │   └── main.py                        # FastAPI application factory
-│   ├── tests/
-│   │   └── test_api.py                    # Automated unit test suite (100% pass)
-│   ├── Dockerfile                         # Production backend container build
-│   ├── main.py                            # Root executable wrapper for uvicorn
-│   └── requirements.txt                   # Backend dependencies
-├── database/                              # Complete relational database architecture
-│   ├── schema.sql                         # Production DDL schema (3NF tables & indexes)
-│   ├── queries.sql                        # Stored procedures, triggers, ACID transactions
-│   ├── seeds.sql                          # Production seed accounts & tickers
-│   └── README.md                          # Database documentation & execution guide
-├── docs/                                  # Full institutional documentation suite (80/80 Rubric)
-│   ├── SYSTEM_DESIGN_DOCUMENT.md          # Mathematical formulas, SLA budgets & latency analysis
-│   ├── DATABASE_ARCHITECTURE.md           # Formal 1NF/2NF/3NF proofs & ER diagram
-│   ├── DATABASE_SPECIFICATION.sql         # Executable Azure SQL specification
-│   ├── CLOUD_INFRASTRUCTURE_AND_ANALYTICS.md # DP-900 multi-tier storage & Power BI DAX
-│   ├── SECURITY_AND_COMPLIANCE.md         # Zero-Trust RBAC matrix & BCBS 239 audit specs
-│   └── EVALUATION_CRITERIA_MAPPING.md     # Rubric compliance cross-reference
-├── frontend/                              # Institutional Light/White Theme React SPA
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── layout/                    # Global structural navigation & tickers
-│   │   │   │   ├── Navbar.jsx             # Top bar with role switcher & shock simulator
-│   │   │   │   ├── LiveTickerBar.jsx      # Streaming market ticks with sparklines
-│   │   │   │   └── Footer.jsx             # Compliance & compute specs footer
-│   │   │   ├── views/                     # 5 Primary operational views
-│   │   │   │   ├── RiskEngineView.jsx     # Live VaR, Expected Shortfall, Gaussian curve
-│   │   │   │   ├── RdbmsExplorerView.jsx  # 3NF table browser, SP & trigger runners
-│   │   │   │   ├── CloudAnalyticsView.jsx # DP-900 storage cards, drawdown charts, DAX modal
-│   │   │   │   ├── SecurityGovernanceView.jsx # Zero-trust RBAC matrix, Pydantic sandbox
-│   │   │   │   └── ApiTesterView.jsx      # Interactive FastAPI console & cURL generator
-│   │   │   └── index.js                   # Unified component exports
-│   │   ├── context/
-│   │   │   └── CenturionContext.jsx       # Global risk sentry state & stochastic market loop
-│   │   ├── index.css                      # Executive Light Theme design system
-│   │   ├── App.jsx                        # Main root layout
-│   │   └── main.jsx                       # React DOM entrypoint
-│   ├── Dockerfile                         # Production frontend container build
-│   ├── package.json                       # Dependencies & scripts
-│   └── vite.config.js                     # Vite build configuration
-├── scripts/                               # Operational developer scripts
-│   ├── run_dev.ps1                        # Launches backend & frontend concurrently (PowerShell)
-│   ├── run_dev.bat                        # Launches backend & frontend concurrently (Batch)
-│   └── test_all.ps1                       # Runs frontend build & backend tests
-├── docker-compose.yml                     # Multi-service container orchestration
-├── schema.sql                             # Root schema symlink / reference
-├── queries.sql                            # Root queries symlink / reference
-├── .gitignore                             # Clean repository ignore rules
-└── README.md                              # This document
-```
-
----
-
-## 🚀 Quickstart & Execution Guide
-
-### Option 1: One-Click Startup (PowerShell / Batch)
-
-```powershell
-# Run the automated launch script
-.\scripts\run_dev.ps1
-```
-
-Or on Windows CMD:
-```cmd
-scripts\run_dev.bat
-```
-
-### Option 2: Manual Development Startup
-
-#### 1. Backend Engine
-```bash
-cd backend
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
-```
-- Swagger Interactive API Docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-- Health Check: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
-
-#### 2. Frontend Web App
-```bash
-cd frontend
-npm install
+```sh
+npm ci
+cp .env.example .env
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# Paste the generated value into BETTER_AUTH_SECRET in .env.
+npm run db:local
+# Keep that terminal running. In another terminal:
+npm run db:migrate
 npm run dev
 ```
-- Web Application: [http://127.0.0.1:5173/](http://127.0.0.1:5173/)
 
-### Option 3: Docker Compose Multi-Container Orchestration
+On Windows use `Copy-Item .env.example .env`. Open http://localhost:3000, create an account with a password of at least 12 characters, then create a portfolio. Select sample data to explore a populated workspace, or use paper cash and add positions. No default account or password is seeded. The development database helper listens only on 127.0.0.1:54329 and uses the explicitly non-production password in `.env.example`; never expose it publicly. Stop it with Ctrl+C. PostgreSQL data persists in ignored `.local-db/`.
 
-```bash
-docker-compose up --build
+Alternatively run PostgreSQL yourself or use `docker compose up -d db` with POSTGRES_PASSWORD set and update DATABASE_URL. Production must use separately generated credentials, TLS, restricted network access, and a dedicated application database role.
+
+## Environment
+
+| Variable | Purpose |
+| --- | --- |
+| DATABASE_URL | Server-only PostgreSQL connection string; set appropriate verified TLS options in production |
+| BETTER_AUTH_URL | Exact canonical application origin; HTTPS in production |
+| BETTER_AUTH_SECRET | High-entropy server-only secret, at least 32 characters |
+| TRUSTED_IP_HEADER | Optional header overwritten by your trusted ingress; empty uses a shared conservative authentication rate limit |
+
+Never commit `.env`, database files, credentials, or tokens. No secret is sent to the browser.
+
+## Working journeys
+
+- Sign up, sign in, sign out; database-backed sessions and authentication throttling.
+- Create personal portfolios with cash or clearly labelled sample data.
+- Add positions from paper cash; update manual prices and daily volatility assumptions.
+- View allocation, NAV, unrealized P&L, Gaussian VaR and expected shortfall.
+- Explore uniform price-shock scenarios without changing saved holdings.
+- Execute paper sales using decimal arithmetic, a locked portfolio, idempotency keys, and an atomic cash/position/order/audit transaction.
+- Browse paginated order and activity records; filter positions by symbol; export a JSON report.
+- Owners grant or remove manager/viewer access to existing accounts. Managers edit/execute; viewers only read/export. Every API checks membership server-side. The owner cannot be demoted.
+- Adjust risk thresholds. Breaches are informational; they do not trigger autonomous trades.
+
+## Data and model
+
+Schema: users, sessions, accounts, verification records, authentication rate limits, portfolios, members, holdings, orders, audit_events, and request_limits. Foreign keys, unique symbols, positive-value checks, role constraints, idempotency uniqueness, and access/history indexes enforce invariants. Audit rows reject UPDATE and DELETE via a trigger. This is not tamper-proof against a database administrator; regulated archival/WORM retention is outside scope.
+
+Risk uses signed-dollar exposures for supported long-only positions, user-entered daily volatility, zero drift, and a fixed **assumed** pairwise correlation of 0.35. Portfolio variance is `sum(exposure_i * vol_i * exposure_j * vol_j * correlation_ij)`. One-day 99% VaR uses 2.326347874 sigma; one-day 97.5% expected shortfall uses 2.337802792 sigma. Cash has zero market volatility. The former application mislabeled a 99% ES factor as 97.5%; this implementation corrects that.
+
+The model does not estimate correlations from history, backtest, model options, support short positions, or account for fat tails, liquidity, fees, slippage, or FX. It is an illustrative research model, not a basis for claiming regulatory compliance. Manual price marks show dates; updating them does not fetch live data. Paper orders use the current server mark at execution, not a guaranteed quoted price.
+
+## Security and operations
+
+Parameterized SQL; strict server schemas; bounded financial values and lists; origin checks on application writes; Better Auth origin/session protections; server-side membership checks; database-backed write throttles; no public caching of private APIs; noindex for private pages. No upload or payment surface exists. Public self-registration gives access only to the new account’s portfolios. Email delivery, verification, password recovery, MFA and enterprise SSO are **not configured**; add them before onboarding real customers. Membership grants require an existing account.
+
+Authenticated application writes allow 60 requests per user per minute. Authentication has tighter limits. Configure a trusted proxy to overwrite its IP header and deny direct origin access before enabling TRUSTED_IP_HEADER. Without it authentication uses a shared conservative bucket. Daily maintenance should delete old `request_limits` buckets, expired sessions/verification records, and stale `rateLimit` rows according to your retention policy; never delete audit history casually.
+
+`GET /api/health` checks PostgreSQL and returns 503 on failure without connection details. JSON logs contain request IDs, method, path, status, duration, and sanitized error types, not bodies or secrets. Ingest these logs into your monitoring provider. Alert on health failures, rising 5xx, latency, DB saturation, and backup failures. Monitoring provider credentials are not configured. Add provider instrumentation in `src/lib/http.ts` without logging session cookies or financial payloads.
+
+## Checks
+
+```sh
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npm start
+# With a running test database, migrated schema and server:
+npx playwright install chromium
+npm run test:e2e
 ```
 
----
+Use a dedicated database for E2E tests: they create uniquely named users and portfolios. Playwright covers account creation, sample portfolios, paper orders, duplicate concurrent requests, authorization, CSRF rejection, invalid/oversized orders, persistence, member access/revocation, UI actions, modal keyboard focus, mobile overflow, and axe accessibility checks. CI runs the checks against PostgreSQL. Actual local verification results and limitations are in `docs/VERIFICATION.md`.
 
-## 🧪 Automated Testing & Validation
+## Deployment, backups and rollback
 
-```bash
-# Run backend test suite
-python backend/tests/test_api.py
+Deploy as a Node.js application behind an HTTPS reverse proxy (a managed Node host or container host). Do not statically export. Provision PostgreSQL privately, use a separate migration role, and grant the runtime role only required table/sequence rights. The runtime role must not be database owner or superuser. Terminate TLS at ingress, redirect HTTP to HTTPS, preserve secure cookies, restrict origin access, configure health checks, and supply secrets via the host’s secret store. Security headers include HSTS in production, nosniff, frame denial, referrer policy and permissions policy. A strict nonce-based CSP is a future hardening task; do not claim it is configured.
 
-# Run frontend production build validation
-cd frontend && npm run build
-```
+Release: back up the database; `npm ci`; run validation; execute migrations once using a migration role (`npx tsx scripts/migrate.ts` with environment variables injected); `npm run build`; deploy and `npm start`. Run authenticated smoke tests, health checks and backup verification before routing users. No paid resources or public deployment are created by this repository.
 
----
+Backups: enable managed point-in-time recovery with retention appropriate to your needs, plus encrypted daily `pg_dump -Fc` snapshots in separate storage. Restrict backup access. Restore quarterly into an isolated database using `pg_restore --no-owner --no-acl`, run migrations/checks, verify row counts, portfolio balances and audit continuity, and record recovery time. Pick and document RPO/RTO with the operator; none is claimed here.
 
-## 📂 Deliverables Directory Index
+Rollback: retain the previous built artifact and schema version. Roll back the app only when its schema remains compatible. Use additive forward migrations; never edit applied SQL. For incompatible schema changes, restore to a new DB at a known recovery point, validate it, and switch connection configuration during a controlled maintenance window. Never drop current data as an automatic rollback.
 
-This repository contains the complete institutional design documentation suite for the **Design Runway Review**:
-
-1. **[docs/SYSTEM_DESIGN_DOCUMENT.md](docs/SYSTEM_DESIGN_DOCUMENT.md)**
-   - Mathematical formulation of Parametric Value-at-Risk (VaR) and Expected Shortfall (CVaR).
-   - Automated Delta-Neutral Micro-Hedging Algorithm with algorithmic trigger criteria.
-   - Synchronous FastAPI Memory Core vs. Asynchronous Celery/Redis Distributed Queue Trade-off Analysis.
-   - Component & Sequence diagrams, SLA and sub-millisecond latency budgets.
-
-2. **[docs/DATABASE_ARCHITECTURE.md](docs/DATABASE_ARCHITECTURE.md)**
-   - Complete 3NF relational normalization formal proofs (1NF, 2NF, 3NF functional dependencies).
-   - Entity-Relationship Diagram (ERD) with cardinalities and foreign key relationships.
-   - Deep dive into Stored Procedures, Database Triggers, ACID Transactions, and Non-Clustered Indexes.
-
-3. **[docs/DATABASE_SPECIFICATION.sql](docs/DATABASE_SPECIFICATION.sql)**
-   - Production-ready, executable T-SQL DDL script for Azure SQL Database.
-   - Implements tables (`users`, `portfolios`, `asset_holdings`, `market_tickers`, `hedging_orders`, `compliance_audit_ledger`).
-   - Stored Procedure `CalculatePortfolioExposure` with input validation and execution plans.
-   - Database Trigger `InitiateHedgingSignal` for automated micro-hedge triggering.
-   - Atomic ACID Transaction block (`TRY...CATCH`, `XACT_ABORT`) for capital balancing and hedging order execution.
-
-4. **[docs/CLOUD_INFRASTRUCTURE_AND_ANALYTICS.md](docs/CLOUD_INFRASTRUCTURE_AND_ANALYTICS.md)**
-   - DP-900 multi-tier storage mapping (Structured, Semi-Structured, Unstructured).
-   - Azure Cosmos DB partitioning strategy (`/asset_ticker`), TTL policies, and indexing.
-   - Azure Blob Storage lifecycle management rules (Hot -> Cool -> Archive) with immutable WORM policies.
-   - Power BI Analytics architecture, analytical SQL Views, and DAX measures for Rolling VaR, Drawdowns, and Hedge Cost-Efficiency.
-
-5. **[docs/SECURITY_AND_COMPLIANCE.md](docs/SECURITY_AND_COMPLIANCE.md)**
-   - Zero-Trust security framework and TLS 1.3 / HTTPS encryption.
-   - Enterprise Role-Based Access Control (RBAC) Matrix across `Risk_Officer`, `Portfolio_Manager`, and `External_Auditor`.
-   - Input sanitization, Pydantic type validation, and parameterized query standards against SQLi/XSS.
-   - Azure Virtual Network (VNet) topology, Network Security Groups (NSG), and Private Link configurations.
-   - Basel III / FRTB compliance audit logging schema.
-
-6. **[docs/EVALUATION_CRITERIA_MAPPING.md](docs/EVALUATION_CRITERIA_MAPPING.md)**
-   - Comprehensive rubric cross-reference demonstrating full mark compliance (20/20 in all 4 categories: System Design, RDBMS Data Integrity, DP-900 Cloud Infrastructure & Analytics, Cloud Security & Zero-Trust).
-
-7. **[database/schema.sql](database/schema.sql)** & **[database/queries.sql](database/queries.sql)**
-   - Production relational DDL definitions and programmability objects.
+Before real-money use, integrate a supported broker sandbox and market-data feed, perform independent model validation, add quote freshness and execution controls, test reconciling broker positions, obtain applicable review, and conduct a security assessment. This release intentionally executes paper transactions only.
