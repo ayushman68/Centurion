@@ -1,6 +1,10 @@
 import { readFile, readdir } from "node:fs/promises";
 import { createHash } from "node:crypto";
-import { db } from "../src/lib/db";
+import { Pool } from "pg";
+// Advisory locks require a direct connection, not a transaction-mode pooler.
+const connectionString = process.env.MIGRATION_DATABASE_URL || process.env.DATABASE_URL;
+if (!connectionString) throw new Error("Set MIGRATION_DATABASE_URL or DATABASE_URL before migrating.");
+const db = new Pool({connectionString, max:1, connectionTimeoutMillis:15000, statement_timeout:60000});
 const client = await db.connect();
 try {
   await client.query("SELECT pg_advisory_lock(731109)");
