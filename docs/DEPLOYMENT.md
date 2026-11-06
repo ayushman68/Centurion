@@ -1,6 +1,6 @@
 # Vercel + Neon deployment
 
-Status: configuration prepared; no hosted application or database has been provisioned yet. Account connections are required before deployment can be completed. Do not mistake a successful local build for a deployed application.
+Status: deployed and verified on 2026-11-06 UTC (2026-11-07 IST). Live site: https://centurion-blush.vercel.app. Vercel deployment `dpl_6vAodtHJE1GY3SHiMGGaTFnix4TF` is READY, serving application commit `726493b31c0ec2a4308fb2d26d943fd0a3ad94bb` on Node.js 24. Neon PostgreSQL 18 is provisioned on the free plan, with the initial migration applied and a restricted application role. No paid upgrades were enabled.
 
 Source: `rebuild/centurion-platform` in `ayushman68/Centurion`. The existing `main` branch contains the previous implementation. Deploy the rebuild branch explicitly; do not import the old frontend directory. The project root is the repository root.
 
@@ -34,3 +34,10 @@ Record the deployed URL and deployment ID after verification. No live brokerage 
 Redeploy the last compatible Vercel deployment. Never run schema downgrades automatically. Preserve Neon backups/restore points under the selected plan's actual limits; use an isolated restoration and explicit cutover if a schema rollback is needed.
 
 References: [Vercel environment variables](https://vercel.com/docs/environment-variables), [Vercel project settings](https://vercel.com/docs/project-configuration/project-settings), [Neon connections](https://neon.com/docs/connect/connect-from-any-app).
+
+## Observed deployment checks
+
+The live HTTPS health endpoint returned 200 with status ok and Cache-Control no-store. A Playwright smoke test against the canonical domain passed signup, sample portfolio creation, paper sale, persistence after reload, mobile width at 390px, sign-out with protected API returning 401, and sign-in with persistent holdings. One clearly named deployment-verification account and sample portfolio remain as audit evidence. No real trades were executed. The canonical URL was accessible without Vercel login; project deployment-protection settings were preserved.
+
+The production database owner credential is excluded from runtime configuration. The application role cannot update/delete/truncate audit records or access schema_migrations. GitHub changes remain on the rebuild branch and draft PR #1; main was preserved. This verification does not certify financial models or replace recovery drills and security review.
+
