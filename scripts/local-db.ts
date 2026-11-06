@@ -1,0 +1,33 @@
+import EmbeddedPostgres from "embedded-postgres";
+import { existsSync } from "node:fs";
+const pg = new EmbeddedPostgres({
+  databaseDir: ".local-db",
+  user: "centurion",
+  password: "local-development-only",
+  port: 54329,
+  persistent: true,
+  authMethod: "scram-sha-256",
+  postgresFlags: ["-h", "127.0.0.1"],
+  onLog: () => {},
+  onError: console.error,
+});
+if (!existsSync(".local-db/PG_VERSION")) await pg.initialise();
+await pg.start();
+const client = pg.getPgClient();
+await client.connect();
+if (
+  !(await client.query("SELECT 1 FROM pg_database WHERE datname='centurion'"))
+    .rowCount
+)
+  await pg.createDatabase("centurion");
+await client.end();
+console.log("Local PostgreSQL ready on 127.0.0.1:54329. Development only.");
+process.on("SIGINT", async () => {
+  await pg.stop();
+  process.exit(0);
+});
+process.on("SIGTERM", async () => {
+  await pg.stop();
+  process.exit(0);
+});
+setInterval(() => {}, 60000);

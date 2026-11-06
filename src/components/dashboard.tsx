@@ -1,0 +1,1481 @@
+"use client";
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  Activity,
+  ArrowDownRight,
+  ArrowRight,
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  LayoutDashboard,
+  Layers,
+  ListChecks,
+  LogOut,
+  Plus,
+  RefreshCw,
+  Settings,
+  ShieldCheck,
+  SlidersHorizontal,
+} from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+import type {
+  Portfolio,
+  Snapshot,
+  Holding,
+  HistoryRow,
+  Page,
+  Member,
+} from "@/lib/types";
+import { Brand } from "./brand";
+import { api, date, Empty, Modal, money, pct } from "./ui";
+
+type View =
+  | "Overview"
+  | "Positions"
+  | "Scenarios"
+  | "Paper orders"
+  | "Activity"
+  | "Settings";
+type Dialog = "portfolio" | "position" | "sell" | "mark" | null;
+const nav = [
+  { name: "Overview", Icon: LayoutDashboard },
+  { name: "Positions", Icon: Layers },
+  { name: "Scenarios", Icon: SlidersHorizontal },
+  { name: "Paper orders", Icon: ArrowDownRight },
+  { name: "Activity", Icon: ListChecks },
+  { name: "Settings", Icon: Settings },
+] as const;
+const colors = [
+  "#b2c7bf",
+  "#183e3b",
+  "#c4aa77",
+  "#7f929f",
+  "#d1d6ce",
+  "#606f64",
+];
+export function Dashboard({ user }: { user: { name: string; email: string } }) {
+  const router = useRouter();
+  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
+  const [selected, setSelected] = useState("");
+  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [view, setView] = useState<View>("Overview");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [revision, setRevision] = useState(0);
+  const [dialog, setDialog] = useState<Dialog>(null);
+  const [target, setTarget] = useState<Holding | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [search, setSearch] = useState("");
+  const [shock, setShock] = useState(-10);
+  const [key, setKey] = useState("");
+  const refresh = useCallback(() => {
+    setLoading(true);
+    setError("");
+    setRevision((x) => x + 1);
+  }, []);
+  useEffect(() => {
+    const controller = new AbortController();
+    async function load() {
+      try {
+        const list: Portfolio[] = [];
+        let page = 1;
+        while (true) {
+          const r = await api<Page<Portfolio>>(
+            `?limit=50&page=${page}`,
+            "GET",
+            undefined,
+            controller.signal,
+          );
+          list.push(...r.items);
+          if (!r.hasMore) break;
+          page++;
+        }
+        setPortfolios(list);
+        setSelected((id) => id || list[0]?.id || "");
+        if (!list.length) setLoading(false);
+      } catch (e) {
+        if (!controller.signal.aborted) {
+          setError(
+            e instanceof Error ? e.message : "Could not load portfolios.",
+          );
+          setLoading(false);
+        }
+      }
+    }
+    load();
+    return () => controller.abort();
+  }, [revision]);
+  useEffect(() => {
+    if (!selected) return;
+    const controller = new AbortController();
+    api<Snapshot>(`/${selected}`, "GET", undefined, controller.signal)
+      .then((data) => {
+        setSnapshot(data);
+        setLoading(false);
+      })
+      .catch((e) => {
+        if (!controller.signal.aborted) {
+          setError(e.message);
+          setSnapshot(null);
+          setLoading(false);
+        }
+      });
+    return () => controller.abort();
+  }, [selected, revision]);
+  function open(kind: Dialog, h?: Holding) {
+    setTarget(h || null);
+    setFormError("");
+    setKey(crypto.randomUUID());
+    setDialog(kind);
+  }
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    setBusy(true);
+    setFormError("");
+    try {
+      if (dialog === "portfolio") {
+        const p = await api<Portfolio>("", "POST", {
+          name: f.get("name"),
+          cash: Number(f.get("cash")),
+          demo: f.get("demo") === "on",
+        });
+        setSelected(p.id);
+      }
+      if (dialog === "position")
+        await api(`/${selected}/holdings`, "POST", {
+          symbol: f.get("symbol"),
+          quantity: Number(f.get("quantity")),
+          price: Number(f.get("price")),
+          volatility: Number(f.get("volatility")) / 100,
+        });
+      if (dialog === "sell" && target)
+        await api(`/${selected}/orders`, "POST", {
+          holdingId: target.id,
+          quantity: Number(f.get("quantity")),
+          idempotencyKey: key,
+        });
+      if (dialog === "mark" && target)
+        await api(`/${selected}/marks`, "PATCH", {
+          holdingId: target.id,
+          price: Number(f.get("price")),
+          volatility: Number(f.get("volatility")) / 100,
+        });
+      setNotice(
+        dialog === "sell"
+          ? "Paper sale recorded. Position, cash, and audit ledger updated."
+          : "Changes saved successfully.",
+      );
+      setDialog(null);
+      refresh();
+    } catch (e) {
+      setFormError(
+        e instanceof Error ? e.message : "Could not save. Please try again.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+  function exportReport() {
+    if (!snapshot) return;
+    const blob = new Blob(
+      [
+        JSON.stringify(
+          {
+            report: "Centurion paper portfolio",
+            exportedAt: new Date().toISOString(),
+            model:
+              "Gaussian, zero drift, 0.35 assumed pairwise correlation; manual price marks; not a live market feed",
+            ...snapshot,
+          },
+          null,
+          2,
+        ),
+      ],
+      { type: "application/json" },
+    );
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `centurion-${snapshot.portfolio.id}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    setNotice("Portfolio report exported.");
+  }
+  const p = snapshot?.portfolio;
+  const r = snapshot?.risk;
+  const writable = p?.role !== "viewer";
+  const filtered =
+    snapshot?.holdings.filter((h) => h.symbol.includes(search.toUpperCase())) ||
+    [];
+  return (
+    <div className="workspace">
+      <aside className="sidebar">
+        <Link href="/" aria-label="Centurion home">
+          <Brand />
+        </Link>
+        <div className="workspace-label">YOUR WORKSPACE</div>
+        <nav aria-label="Workspace navigation">
+          {nav.map(({ name, Icon }) => (
+            <button
+              key={name}
+              className={view === name ? "nav-item active" : "nav-item"}
+              aria-current={view === name ? "page" : undefined}
+              onClick={() => {
+                setView(name);
+                setNotice("");
+              }}
+            >
+              <Icon size={18} />
+              {name}
+              {name === "Overview" && <span className="nav-dot" />}
+            </button>
+          ))}
+        </nav>
+        <div className="sidebar-bottom">
+          <div className="paper-note">
+            <ShieldCheck size={20} />
+            <strong>A space to test decisions</strong>
+            <p>
+              Paper execution only.
+              <br />
+              Your capital stays untouched.
+            </p>
+          </div>
+          <div className="user-row">
+            <span className="avatar">
+              {user.name.slice(0, 2).toUpperCase()}
+            </span>
+            <div>
+              <strong>{user.name}</strong>
+              <small>Personal workspace</small>
+            </div>
+            <button
+              className="icon-button"
+              aria-label="Sign out"
+              onClick={async () => {
+                try {
+                  const result = await authClient.signOut();
+                  if (result.error) throw new Error();
+                  router.replace("/login");
+                  router.refresh();
+                } catch {
+                  setError("Could not sign out. Try again.");
+                }
+              }}
+            >
+              <LogOut size={17} />
+            </button>
+          </div>
+        </div>
+      </aside>
+      <div className="workspace-body">
+        <header className="topbar">
+          <div className="breadcrumb">
+            Workspace <span>/</span> <strong>{view}</strong>
+          </div>
+          <div className="topbar-right">
+            <button
+              className="icon-button mobile-signout"
+              aria-label="Sign out"
+              onClick={async () => {
+                try {
+                  const result = await authClient.signOut();
+                  if (result.error) throw new Error();
+                  router.replace("/login");
+                  router.refresh();
+                } catch {
+                  setError("Could not sign out. Try again.");
+                }
+              }}
+            >
+              <LogOut size={17} />
+            </button>
+            <span className="mode-badge">
+              <span /> PAPER ENVIRONMENT
+            </span>
+            <span className="topbar-divider" />
+            <span className="avatar small">
+              {user.name.slice(0, 2).toUpperCase()}
+            </span>
+          </div>
+        </header>
+        <main id="main" className="main-content">
+          <div className="page-heading">
+            <div>
+              <span className="eyebrow">PORTFOLIO INTELLIGENCE</span>
+              <h1>
+                {view === "Overview"
+                  ? "Your risk, in perspective."
+                  : view === "Scenarios"
+                    ? "Explore the downside."
+                    : view === "Activity"
+                      ? "Every decision, accounted for."
+                      : view === "Settings"
+                        ? "A workspace on your terms."
+                        : view === "Positions"
+                          ? "Know what you hold."
+                          : "Deliberate moves. Clear records."}
+              </h1>
+              <p>
+                {view === "Overview"
+                  ? "A clear view of your capital, exposure, and room to move."
+                  : view === "Scenarios"
+                    ? "Test a uniform price shock against your current holdings."
+                    : view === "Positions"
+                      ? "Manage positions and the assumptions behind their valuations."
+                      : view === "Paper orders"
+                        ? "Recorded sales at your manually entered price marks."
+                        : view === "Activity"
+                          ? "A durable record of changes across this portfolio."
+                          : "Manage risk thresholds and portfolio access."}
+              </p>
+            </div>
+            <button
+              className="button secondary"
+              onClick={exportReport}
+              disabled={!snapshot || loading}
+            >
+              <Download size={16} /> Export report
+            </button>
+          </div>
+          <div className="portfolio-toolbar">
+            <div className="portfolio-select">
+              <span className="portfolio-icon">
+                <Layers size={19} />
+              </span>
+              <label>
+                <span>ACTIVE PORTFOLIO</span>
+                <select
+                  aria-label="Active portfolio"
+                  value={selected}
+                  onChange={(e) => {
+                    setLoading(true);
+                    setError("");
+                    setSelected(e.target.value);
+                    setSnapshot(null);
+                    setNotice("");
+                  }}
+                  disabled={!portfolios.length}
+                >
+                  {!portfolios.length && (
+                    <option value="">No portfolios yet</option>
+                  )}
+                  {portfolios.map((x) => (
+                    <option value={x.id} key={x.id}>
+                      {x.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="toolbar-actions">
+              {p && (
+                <span className="pill">
+                  {p.is_demo ? "SAMPLE DATA" : "MANUAL DATA"}
+                </span>
+              )}
+              <button
+                className="icon-button"
+                aria-label="Refresh portfolio"
+                onClick={refresh}
+                disabled={loading}
+              >
+                <RefreshCw size={17} className={loading ? "spinning" : ""} />
+              </button>
+              <button
+                className="button small-button"
+                onClick={() => open("portfolio")}
+              >
+                <Plus size={16} /> New portfolio
+              </button>
+            </div>
+          </div>
+          {notice && (
+            <div className="notice success" role="status">
+              {notice}
+              <button className="text-link" onClick={() => setNotice("")}>
+                Dismiss
+              </button>
+            </div>
+          )}
+          {error && (
+            <div className="notice error" role="alert">
+              {error}
+              <button className="text-link" onClick={refresh}>
+                Retry
+              </button>
+            </div>
+          )}
+          {loading ? (
+            <div className="loading-grid" role="status">
+              <div className="skeleton" />
+              <div className="skeleton" />
+              <div className="skeleton" />
+              <span>Loading portfolio…</span>
+            </div>
+          ) : !selected ? (
+            <section className="panel">
+              <Empty
+                title="Your perspective starts here."
+                text="Create a portfolio with paper cash, or explore a clearly labelled sample portfolio."
+              >
+                <button className="button" onClick={() => open("portfolio")}>
+                  <Plus size={16} /> Create portfolio
+                </button>
+              </Empty>
+            </section>
+          ) : snapshot && p && r ? (
+            <>
+              {view === "Overview" && (
+                <>
+                  <div className="metric-grid">
+                    <Metric
+                      label="TOTAL PORTFOLIO VALUE"
+                      value={money(r.nav)}
+                      foot={
+                        <>
+                          <span
+                            className={r.pnl >= 0 ? "positive" : "negative"}
+                          >
+                            {r.pnl >= 0 ? "+" : ""}
+                            {money(r.pnl)}
+                          </span>{" "}
+                          unrealized P&L
+                        </>
+                      }
+                    />
+                    <Metric
+                      label="1-DAY VALUE AT RISK"
+                      value={money(r.var99)}
+                      foot={
+                        <>
+                          99% confidence <span className="metric-dot">·</span>{" "}
+                          {pct(r.varPercent)} of NAV
+                        </>
+                      }
+                    />
+                    <Metric
+                      label="EXPECTED SHORTFALL"
+                      value={money(r.es975)}
+                      foot={
+                        <>
+                          97.5% confidence <span className="metric-dot">·</span>{" "}
+                          Gaussian model
+                        </>
+                      }
+                    />
+                    <Metric
+                      label="AVAILABLE PAPER CASH"
+                      value={money(r.cash)}
+                      foot={
+                        <>
+                          {pct(r.nav ? r.cash / r.nav : 0)} of portfolio value
+                        </>
+                      }
+                    />
+                  </div>
+                  <div className="overview-grid">
+                    <section className="panel exposure-panel">
+                      <PanelHeading
+                        eyebrow="EXPOSURE BREAKDOWN"
+                        title="Where your capital sits"
+                        extra={<span className="pill">USD</span>}
+                      />
+                      <div className="allocation">
+                        <Allocation
+                          holdings={snapshot.holdings}
+                          cash={r.cash}
+                          nav={r.nav}
+                        />
+                        <div className="allocation-legend">
+                          {snapshot.holdings.slice(0, 5).map((h, i) => (
+                            <div key={h.id}>
+                              <span className="legend-label">
+                                <i
+                                  style={{
+                                    background: colors[i % colors.length],
+                                  }}
+                                />
+                                {h.symbol}
+                              </span>
+                              <strong>
+                                {money(Number(h.quantity) * Number(h.price))}
+                              </strong>
+                              <span>
+                                {pct(
+                                  r.nav
+                                    ? (Number(h.quantity) * Number(h.price)) /
+                                        r.nav
+                                    : 0,
+                                )}
+                              </span>
+                            </div>
+                          ))}
+                          {snapshot.holdings.length > 5 && (
+                            <div>
+                              <span>Other positions</span>
+                              <strong>{snapshot.holdings.length - 5}</strong>
+                            </div>
+                          )}
+                          <div>
+                            <span className="legend-label">
+                              <i style={{ background: "#e5e9e5" }} />
+                              Cash
+                            </span>
+                            <strong>{money(r.cash)}</strong>
+                            <span>{pct(r.nav ? r.cash / r.nav : 0)}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="panel-bottom">
+                        <span>
+                          {snapshot.holdings.length} active positions · Manual
+                          price marks
+                        </span>
+                        <button
+                          className="text-link"
+                          onClick={() => setView("Positions")}
+                        >
+                          View positions <ArrowRight size={15} />
+                        </button>
+                      </div>
+                    </section>
+                    <section className="risk-panel">
+                      <div className="risk-panel-top">
+                        <span className="eyebrow">RISK MONITOR</span>
+                        <ShieldCheck size={22} />
+                      </div>
+                      <span
+                        className={`risk-status ${r.varPercent > Number(p.risk_limit) ? "breached" : ""}`}
+                      >
+                        <i />
+                        {r.varPercent > Number(p.risk_limit)
+                          ? "Above your threshold"
+                          : "Within your threshold"}
+                      </span>
+                      <h2>
+                        Keep the downside
+                        <br />
+                        in sight.
+                      </h2>
+                      <p>
+                        Your 1-day VaR uses{" "}
+                        <strong>
+                          {(
+                            (r.varPercent / Number(p.risk_limit)) *
+                            100
+                          ).toFixed(0)}
+                          %
+                        </strong>{" "}
+                        of your chosen risk threshold.
+                      </p>
+                      <div className="risk-meter">
+                        <span
+                          style={{
+                            width: `${Math.min(100, (r.varPercent / Number(p.risk_limit)) * 100)}%`,
+                          }}
+                        />
+                      </div>
+                      <div className="risk-scale">
+                        <span>0%</span>
+                        <span>Limit: {pct(Number(p.risk_limit))} of NAV</span>
+                      </div>
+                      <button
+                        className="button light"
+                        onClick={() => setView("Scenarios")}
+                      >
+                        Explore a scenario <ArrowUpRight size={17} />
+                      </button>
+                      <small>
+                        Estimates describe assumptions, not guaranteed outcomes.
+                      </small>
+                    </section>
+                  </div>
+                  <section className="panel position-preview">
+                    <PanelHeading
+                      eyebrow="AT A GLANCE"
+                      title="Your largest positions"
+                      extra={
+                        <button
+                          className="text-link"
+                          onClick={() => setView("Positions")}
+                        >
+                          All positions <ArrowRight size={15} />
+                        </button>
+                      }
+                    />
+                    <Positions
+                      holdings={[...snapshot.holdings]
+                        .sort(
+                          (a, b) =>
+                            Number(b.quantity) * Number(b.price) -
+                            Number(a.quantity) * Number(a.price),
+                        )
+                        .slice(0, 4)}
+                      nav={r.nav}
+                      writable={false}
+                      onSell={(h) => open("sell", h)}
+                      onMark={(h) => open("mark", h)}
+                    />
+                  </section>
+                </>
+              )}
+              {view === "Positions" && (
+                <section className="panel">
+                  <PanelHeading
+                    eyebrow={`${snapshot.holdings.length} ACTIVE POSITIONS`}
+                    title="Portfolio holdings"
+                    extra={
+                      writable ? (
+                        <button
+                          className="button small-button"
+                          onClick={() => open("position")}
+                        >
+                          <Plus size={16} /> Add position
+                        </button>
+                      ) : (
+                        <span className="pill">READ ONLY</span>
+                      )
+                    }
+                  />
+                  <div className="table-controls">
+                    <label className="search-label">
+                      Filter by symbol
+                      <input
+                        type="search"
+                        placeholder="e.g. AAPL"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                      />
+                    </label>
+                    <span>Manually marked · USD · Long-only</span>
+                  </div>
+                  <Positions
+                    holdings={filtered}
+                    nav={r.nav}
+                    writable={writable}
+                    onSell={(h) => open("sell", h)}
+                    onMark={(h) => open("mark", h)}
+                  />
+                </section>
+              )}
+              {view === "Scenarios" && (
+                <div className="scenario-grid">
+                  <section className="panel">
+                    <PanelHeading
+                      eyebrow="STRESS LAB"
+                      title="What if prices moved?"
+                    />
+                    <div className="scenario-body">
+                      <label className="shock-label" htmlFor="shock">
+                        Uniform price shock{" "}
+                        <strong>
+                          {shock > 0 ? "+" : ""}
+                          {shock}%
+                        </strong>
+                      </label>
+                      <input
+                        id="shock"
+                        className="range"
+                        type="range"
+                        min={-50}
+                        max={50}
+                        step={1}
+                        value={shock}
+                        onChange={(e) => setShock(Number(e.target.value))}
+                      />
+                      <div className="range-labels">
+                        <span>−50%</span>
+                        <span>Unchanged</span>
+                        <span>+50%</span>
+                      </div>
+                      <div className="scenario-presets">
+                        {[-30, -10, -5, 10].map((n) => (
+                          <button
+                            className={shock === n ? "chip selected" : "chip"}
+                            aria-pressed={shock === n}
+                            key={n}
+                            onClick={() => setShock(n)}
+                          >
+                            {n > 0 ? "+" : ""}
+                            {n}% shock
+                          </button>
+                        ))}
+                      </div>
+                      <div className="scenario-result">
+                        <div>
+                          <span>PROJECTED PORTFOLIO VALUE</span>
+                          <strong>
+                            {money(r.nav + (r.invested * shock) / 100)}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>CHANGE IN VALUE</span>
+                          <strong
+                            className={shock < 0 ? "negative" : "positive"}
+                          >
+                            {shock > 0 ? "+" : ""}
+                            {money((r.invested * shock) / 100)}
+                          </strong>
+                        </div>
+                      </div>
+                      <div className="scenario-bars">
+                        <div>
+                          <span>Current NAV</span>
+                          <i
+                            style={{
+                              width: `${r.nav ? 100 / (1 + Math.max(0, shock) / 100) : 0}%`,
+                            }}
+                          />
+                          <strong>{money(r.nav)}</strong>
+                        </div>
+                        <div>
+                          <span>After shock</span>
+                          <i
+                            className="after"
+                            style={{
+                              width: `${r.nav ? (((r.nav + (r.invested * shock) / 100) / r.nav) * 100) / (1 + Math.max(0, shock) / 100) : 0}%`,
+                            }}
+                          />
+                          <strong>
+                            {money(r.nav + (r.invested * shock) / 100)}
+                          </strong>
+                        </div>
+                      </div>
+                      <p className="muted">
+                        Cash is unchanged. Every position receives the same
+                        price shock. This scenario does not change your saved
+                        portfolio.
+                      </p>
+                    </div>
+                  </section>
+                  <section className="panel methodology">
+                    <span className="eyebrow">READ THE ASSUMPTIONS</span>
+                    <h2>
+                      A model is a lens.
+                      <br />
+                      Not a prediction.
+                    </h2>
+                    <p>
+                      Risk uses a zero-mean Gaussian return model, entered daily
+                      volatilities, and an assumed 0.35 correlation between
+                      every pair of assets.
+                    </p>
+                    <dl>
+                      <dt>Value at Risk</dt>
+                      <dd>99% confidence · one trading day</dd>
+                      <dt>Expected Shortfall</dt>
+                      <dd>97.5% confidence · one trading day</dd>
+                      <dt>Price source</dt>
+                      <dd>Manual marks, not a live feed</dd>
+                      <dt>Model limitations</dt>
+                      <dd>
+                        No liquidity, fees, slippage, fat tails, or dynamic
+                        correlations. No options or short positions.
+                      </dd>
+                    </dl>
+                  </section>
+                </div>
+              )}
+              {(view === "Paper orders" || view === "Activity") && (
+                <History
+                  key={`${selected}-${view}-${revision}`}
+                  id={selected}
+                  kind={view === "Paper orders" ? "orders" : "audit"}
+                />
+              )}
+              {view === "Settings" && (
+                <WorkspaceSettings
+                  key={`${selected}-${revision}`}
+                  snapshot={snapshot}
+                  onSaved={() => {
+                    setNotice("Settings saved.");
+                    refresh();
+                  }}
+                />
+              )}
+              <footer className="workspace-footer">
+                <span>
+                  <span className="status-dot" /> Snapshot loaded{" "}
+                  {date(snapshot.asOf)}
+                </span>
+                <span>Paper workspace · {p.role} access · Model v1</span>
+              </footer>
+            </>
+          ) : null}
+        </main>
+      </div>
+      {dialog && (
+        <Modal
+          title={
+            dialog === "portfolio"
+              ? "Create a portfolio"
+              : dialog === "position"
+                ? "Add a paper position"
+                : dialog === "mark"
+                  ? `Update ${target?.symbol} mark`
+                  : `Reduce ${target?.symbol} exposure`
+          }
+          onClose={() => setDialog(null)}
+          busy={busy}
+        >
+          <form onSubmit={submit} className="dialog-form">
+            {dialog === "portfolio" ? (
+              <>
+                <p>
+                  Start with cash and add your positions, or explore a labelled
+                  sample.
+                </p>
+                <label>
+                  Portfolio name
+                  <input
+                    name="name"
+                    required
+                    minLength={2}
+                    maxLength={80}
+                    placeholder="e.g. Core equity strategy"
+                    autoFocus
+                  />
+                </label>
+                <label>
+                  Starting paper cash (USD)
+                  <input
+                    name="cash"
+                    type="number"
+                    min={100}
+                    max={1000000000}
+                    step="0.01"
+                    defaultValue={1000000}
+                    required
+                  />
+                </label>
+                <label className="checkbox-label">
+                  <input type="checkbox" name="demo" />
+                  Use sample positions and $250,000 cash instead
+                </label>
+                <small>
+                  Sample assets are fictional historical marks, not current
+                  market prices.
+                </small>
+              </>
+            ) : dialog === "position" ? (
+              <>
+                <p>
+                  The allocation is deducted from available paper cash:{" "}
+                  <strong>{money(r?.cash || 0, 2)}</strong>.
+                </p>
+                <label>
+                  Symbol
+                  <input
+                    name="symbol"
+                    required
+                    pattern="[A-Za-z][A-Za-z0-9.\-]{0,11}"
+                    maxLength={12}
+                    placeholder="AAPL"
+                    autoFocus
+                  />
+                </label>
+                <div className="form-grid">
+                  <label>
+                    Quantity
+                    <input
+                      name="quantity"
+                      type="number"
+                      min="0.000001"
+                      max="1000000"
+                      step="0.000001"
+                      required
+                    />
+                  </label>
+                  <label>
+                    Entry price (USD)
+                    <input
+                      name="price"
+                      type="number"
+                      min="0.0001"
+                      max="1000000"
+                      step="0.0001"
+                      required
+                    />
+                  </label>
+                </div>
+                <label>
+                  Assumed daily volatility (%)
+                  <input
+                    name="volatility"
+                    type="number"
+                    min="0.01"
+                    max="100"
+                    step="0.01"
+                    defaultValue="2"
+                    required
+                  />
+                </label>
+              </>
+            ) : dialog === "mark" ? (
+              <>
+                <p>Update a manual valuation. This does not place an order.</p>
+                <label>
+                  Marked price (USD)
+                  <input
+                    name="price"
+                    type="number"
+                    min="0.0001"
+                    max="1000000"
+                    step="0.0001"
+                    defaultValue={target?.price}
+                    required
+                    autoFocus
+                  />
+                </label>
+                <label>
+                  Assumed daily volatility (%)
+                  <input
+                    name="volatility"
+                    type="number"
+                    min="0.01"
+                    max="100"
+                    step="0.01"
+                    defaultValue={Number(target?.volatility) * 100}
+                    required
+                  />
+                </label>
+              </>
+            ) : (
+              <>
+                <div className="notice info">
+                  PAPER SALE · No broker order will be sent.
+                </div>
+                <p>
+                  Sell at the latest saved manual mark. Current mark:{" "}
+                  <strong>{money(target?.price || 0, 4)}</strong>. Available:{" "}
+                  <strong>
+                    {Number(target?.quantity).toLocaleString()} shares
+                  </strong>
+                  .
+                </p>
+                <label>
+                  Quantity to sell
+                  <input
+                    name="quantity"
+                    type="number"
+                    min="0.000001"
+                    max={target?.quantity}
+                    step="0.000001"
+                    defaultValue={Math.min(Number(target?.quantity), 100)}
+                    required
+                    autoFocus
+                  />
+                </label>
+                <small>
+                  Execution uses the server’s current mark, which may change if
+                  a teammate updates it. No fees or slippage are modelled.
+                </small>
+              </>
+            )}
+            {formError && (
+              <div role="alert" className="notice error">
+                {formError}
+              </div>
+            )}
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="button secondary"
+                disabled={busy}
+                onClick={() => setDialog(null)}
+              >
+                Cancel
+              </button>
+              <button className="button" disabled={busy}>
+                {busy
+                  ? "Saving…"
+                  : dialog === "sell"
+                    ? "Confirm paper sale"
+                    : dialog === "portfolio"
+                      ? "Create portfolio"
+                      : "Save changes"}
+                <ArrowRight size={16} />
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </div>
+  );
+}
+function Metric({
+  label,
+  value,
+  foot,
+}: {
+  label: string;
+  value: string;
+  foot: React.ReactNode;
+}) {
+  return (
+    <section className="metric">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{foot}</small>
+    </section>
+  );
+}
+function PanelHeading({
+  eyebrow,
+  title,
+  extra,
+}: {
+  eyebrow: string;
+  title: string;
+  extra?: React.ReactNode;
+}) {
+  return (
+    <div className="panel-heading">
+      <div>
+        <span className="eyebrow">{eyebrow}</span>
+        <h2>{title}</h2>
+      </div>
+      {extra}
+    </div>
+  );
+}
+function Allocation({
+  holdings,
+  cash,
+  nav,
+}: {
+  holdings: Holding[];
+  cash: number;
+  nav: number;
+}) {
+  const weights = holdings.map((h) =>
+    nav ? ((Number(h.quantity) * Number(h.price)) / nav) * 100 : 0,
+  );
+  const stops = weights.map((weight, i) => {
+    const start = weights.slice(0, i).reduce((a, b) => a + b, 0);
+    return `${colors[i % colors.length]} ${start}% ${start + weight}%`;
+  });
+  stops.push(`#e5e9e5 ${weights.reduce((a, b) => a + b, 0)}% 100%`);
+  return (
+    <div
+      className="donut"
+      role="img"
+      aria-label={`Invested ${money(nav - cash)}. Cash ${money(cash)}.`}
+      style={{ background: `conic-gradient(${stops.join(",")})` }}
+    >
+      <div>
+        <span>INVESTED</span>
+        <strong>{pct(nav ? (nav - cash) / nav : 0)}</strong>
+        <small>of total value</small>
+      </div>
+    </div>
+  );
+}
+function Positions({
+  holdings,
+  nav,
+  writable,
+  onSell,
+  onMark,
+}: {
+  holdings: Holding[];
+  nav: number;
+  writable: boolean;
+  onSell: (h: Holding) => void;
+  onMark: (h: Holding) => void;
+}) {
+  if (!holdings.length)
+    return (
+      <Empty
+        title="No positions to display"
+        text="Add a position or adjust your symbol filter."
+      />
+    );
+  return (
+    <div
+      className="table-scroll"
+      tabIndex={0}
+      role="region"
+      aria-label="Scrollable portfolio records"
+    >
+      <table>
+        <thead>
+          <tr>
+            <th>Asset</th>
+            <th className="numeric">Quantity</th>
+            <th className="numeric">Manual mark</th>
+            <th className="numeric">Market value</th>
+            <th className="numeric">Weight</th>
+            <th className="numeric">Unrealized P&L</th>
+            {writable && <th>Actions</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {holdings.map((h, i) => {
+            const value = Number(h.quantity) * Number(h.price);
+            const pnl = value - Number(h.quantity) * Number(h.cost);
+            return (
+              <tr key={h.id}>
+                <td>
+                  <div className="asset-cell">
+                    <span
+                      className="asset-icon"
+                      style={{ borderColor: colors[i % colors.length] }}
+                    >
+                      {h.symbol.slice(0, 1)}
+                    </span>
+                    <div>
+                      <strong>{h.symbol}</strong>
+                      <small>Equity / ETF</small>
+                    </div>
+                  </div>
+                </td>
+                <td className="numeric">
+                  {Number(h.quantity).toLocaleString(undefined, {
+                    maximumFractionDigits: 6,
+                  })}
+                </td>
+                <td className="numeric">
+                  {money(h.price, 4)}
+                  <small>{new Date(h.marked_at).toLocaleDateString()}</small>
+                </td>
+                <td className="numeric strong">{money(value, 2)}</td>
+                <td className="numeric">{pct(nav ? value / nav : 0)}</td>
+                <td className={`numeric ${pnl >= 0 ? "positive" : "negative"}`}>
+                  {pnl >= 0 ? "+" : ""}
+                  {money(pnl, 2)}
+                </td>
+                {writable && (
+                  <td>
+                    <div className="row-actions">
+                      <button
+                        className="text-link"
+                        aria-label={`Update ${h.symbol} mark`}
+                        onClick={() => onMark(h)}
+                      >
+                        Mark
+                      </button>
+                      <button
+                        className="button tiny secondary"
+                        aria-label={`Reduce ${h.symbol} exposure`}
+                        onClick={() => onSell(h)}
+                      >
+                        Reduce <ArrowUpRight size={13} />
+                      </button>
+                    </div>
+                  </td>
+                )}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+function History({ id, kind }: { id: string; kind: "orders" | "audit" }) {
+  const [page, setPage] = useState(1);
+  const [data, setData] = useState<Page<HistoryRow> | null>(null);
+  const [error, setError] = useState("");
+  const [retry, setRetry] = useState(0);
+  useEffect(() => {
+    const c = new AbortController();
+    api<Page<HistoryRow>>(
+      `/${id}/${kind}?page=${page}&limit=15`,
+      "GET",
+      undefined,
+      c.signal,
+    )
+      .then(setData)
+      .catch((e) => {
+        if (!c.signal.aborted) setError(e.message);
+      });
+    return () => c.abort();
+  }, [id, kind, page, retry]);
+  return (
+    <section className="panel">
+      <PanelHeading
+        eyebrow={
+          kind === "orders" ? "PAPER EXECUTION LEDGER" : "APPEND-ONLY EVENT LOG"
+        }
+        title={kind === "orders" ? "Order history" : "Portfolio activity"}
+        extra={
+          <span className="pill">
+            {kind === "orders" ? "SELL ONLY" : "AUDIT TRAIL"}
+          </span>
+        }
+      />
+      {error ? (
+        <div className="notice error" role="alert">
+          {error}
+          <button
+            className="text-link"
+            onClick={() => {
+              setError("");
+              setData(null);
+              setRetry((x) => x + 1);
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      ) : !data ? (
+        <p className="pad" role="status">
+          Loading records…
+        </p>
+      ) : !data.items.length ? (
+        <Empty
+          title={
+            kind === "orders" ? "No paper orders yet" : "No events on this page"
+          }
+          text={
+            kind === "orders"
+              ? "Reduce a position from the Positions view to record your first paper sale."
+              : "New portfolio changes will appear here."
+          }
+        />
+      ) : kind === "orders" ? (
+        <div
+          className="table-scroll"
+          tabIndex={0}
+          role="region"
+          aria-label="Scrollable portfolio records"
+        >
+          <table>
+            <thead>
+              <tr>
+                <th>Asset</th>
+                <th>Execution</th>
+                <th className="numeric">Quantity</th>
+                <th className="numeric">Price</th>
+                <th className="numeric">Proceeds</th>
+                <th>Recorded at</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.items.map((o) => (
+                <tr key={o.id}>
+                  <td>
+                    <strong>{o.symbol}</strong>
+                  </td>
+                  <td>
+                    <span className="pill">PAPER SELL</span>
+                  </td>
+                  <td className="numeric">
+                    {Number(o.quantity).toLocaleString()}
+                  </td>
+                  <td className="numeric">{money(o.price || 0, 4)}</td>
+                  <td className="numeric positive">
+                    {money(o.proceeds || 0, 2)}
+                  </td>
+                  <td>{date(o.created_at)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="timeline">
+          {data.items.map((event) => (
+            <article key={event.id}>
+              <span className="event-icon">
+                <Activity size={16} />
+              </span>
+              <div>
+                <h3>{event.action?.toLowerCase().replaceAll("_", " ")}</h3>
+                <p>
+                  {event.actor_name} <span>·</span> {date(event.created_at)}
+                </p>
+                <details>
+                  <summary>View recorded details</summary>
+                  <pre>{JSON.stringify(event.detail, null, 2)}</pre>
+                </details>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+      <div className="pagination">
+        <span>Page {page}</span>
+        <div>
+          <button
+            className="button tiny secondary"
+            disabled={page === 1 || !data}
+            onClick={() => {
+              setData(null);
+              setPage((x) => x - 1);
+            }}
+          >
+            <ChevronLeft size={15} /> Previous
+          </button>
+          <button
+            className="button tiny secondary"
+            disabled={!data?.hasMore}
+            onClick={() => {
+              setData(null);
+              setPage((x) => x + 1);
+            }}
+          >
+            Next <ChevronRight size={15} />
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+function WorkspaceSettings({
+  snapshot,
+  onSaved,
+}: {
+  snapshot: Snapshot;
+  onSaved: () => void;
+}) {
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [membersError, setMembersError] = useState("");
+  const p = snapshot.portfolio;
+  useEffect(() => {
+    if (p.role !== "owner") return;
+    const c = new AbortController();
+    api<Member[]>(`/${p.id}/members`, "GET", undefined, c.signal)
+      .then(setMembers)
+      .catch((e) => {
+        if (!c.signal.aborted) setMembersError(e.message);
+      });
+    return () => c.abort();
+  }, [p.id, p.role]);
+  async function mutate(path: string, data: unknown, method = "PATCH") {
+    setBusy(true);
+    setError("");
+    try {
+      await api(`/${p.id}/${path}`, method, data);
+      onSaved();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not save.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="settings-grid">
+      <section className="panel">
+        <PanelHeading eyebrow="GUARDRAILS" title="Risk threshold" />
+        <form
+          className="settings-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            mutate("settings", {
+              riskLimit:
+                Number(new FormData(e.currentTarget).get("riskLimit")) / 100,
+            });
+          }}
+        >
+          <p>
+            The monitor flags when 1-day 99% VaR exceeds this percentage of net
+            asset value. It does not automatically place orders.
+          </p>
+          <label>
+            Maximum VaR (% of NAV)
+            <input
+              name="riskLimit"
+              type="number"
+              min="0.5"
+              max="50"
+              step="0.1"
+              defaultValue={Number(p.risk_limit) * 100}
+              required
+              disabled={p.role === "viewer"}
+            />
+          </label>
+          <button className="button" disabled={busy || p.role === "viewer"}>
+            Save threshold
+          </button>
+        </form>
+      </section>
+      <section className="panel">
+        <PanelHeading eyebrow="ACCESS CONTROL" title="Portfolio members" />
+        {p.role !== "owner" ? (
+          <div className="pad">
+            <p>
+              Your role: <strong>{p.role}</strong>. Only the owner can manage
+              members.
+            </p>
+          </div>
+        ) : (
+          <div className="settings-form">
+            <p>
+              Grant access to an existing account. Managers can edit positions
+              and execute paper sales. Viewers can read and export.
+            </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const f = new FormData(e.currentTarget);
+                mutate(
+                  "members",
+                  { email: f.get("email"), role: f.get("role") },
+                  "POST",
+                );
+              }}
+            >
+              <label>
+                Account email
+                <input name="email" type="email" required />
+              </label>
+              <label>
+                Role
+                <select name="role">
+                  <option value="viewer">Viewer — read only</option>
+                  <option value="manager">Manager — edit and execute</option>
+                </select>
+              </label>
+              <button className="button" disabled={busy}>
+                Save access
+              </button>
+            </form>
+            {membersError && (
+              <p role="alert" className="negative">
+                {membersError}
+              </p>
+            )}
+            <ul className="member-list">
+              {members.map((m) => (
+                <li key={m.user_id}>
+                  <div>
+                    <strong>{m.name}</strong>
+                    <small>{m.email}</small>
+                  </div>
+                  <span className="pill">{m.role}</span>
+                  {m.role !== "owner" && (
+                    <button
+                      className="text-link negative"
+                      disabled={busy}
+                      onClick={() =>
+                        mutate("members", { userId: m.user_id }, "DELETE")
+                      }
+                    >
+                      Remove
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+      {error && (
+        <div role="alert" className="notice error">
+          {error}
+        </div>
+      )}
+    </div>
+  );
+}
