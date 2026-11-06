@@ -1,5 +1,9 @@
 # Centurion
 
+**Live deployment:** [Open Centurion](https://centurion-blush.vercel.app)
+
+Create an account to explore the workspace. This deployment supports paper trading with sample or manually entered data.
+
 A portfolio-risk workspace with a responsive interface, PostgreSQL persistence, authenticated portfolio access, scenario analysis, and transactional **paper sales**. No broker is connected and no real trades execute. Sample portfolios and manual prices are explicitly labelled. No Basel, FRTB, SOC 2, investment-performance, or production-certification claims are made.
 
 ## Stack and architecture
@@ -92,3 +96,4 @@ Backups: enable managed point-in-time recovery with retention appropriate to you
 Rollback: retain the previous built artifact and schema version. Roll back the app only when its schema remains compatible. Use additive forward migrations; never edit applied SQL. For incompatible schema changes, restore to a new DB at a known recovery point, validate it, and switch connection configuration during a controlled maintenance window. Never drop current data as an automatic rollback.
 
 Before real-money use, integrate a supported broker sandbox and market-data feed, perform independent model validation, add quote freshness and execution controls, test reconciling broker positions, obtain applicable review, and conduct a security assessment. This release intentionally executes paper transactions only.
+
