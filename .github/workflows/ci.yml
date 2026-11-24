@@ -94,6 +94,10 @@ jobs:
             echo "::error::Add VERCEL_TOKEN to the production environment secrets in GitHub Settings > Environments."
             exit 1
           fi
+      - name: Reject superseded release
+        run: |
+          current="$(git ls-remote origin refs/heads/main | cut -f1)"
+          test "$current" = "$GITHUB_SHA" || { echo "::error::A newer main commit exists; deploy that commit instead."; exit 1; }
       - name: Install pinned deployment CLI
         run: npm install --global "vercel@$VERCEL_CLI_VERSION"
       - name: Pull production configuration
@@ -102,6 +106,8 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       - name: Build production artifact
         run: vercel build --prod
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       # Migrations are deliberately separate: never expose the database-owner
       # connection to the build or runtime. Apply additive migrations before release.
       - name: Stage tested production build
