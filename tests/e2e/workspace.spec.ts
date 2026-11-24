@@ -135,6 +135,10 @@ test("complete workspace journey, authorization, transactional sales and accessi
   const viewer = memberList.find(
     (m: { email: string }) => m.email === otherEmail,
   );
+  const viewerContext = await page.context().browser()!.newContext({ storageState: await outsider.storageState(), baseURL: "http://localhost:3000" });
+  const viewerPage = await viewerContext.newPage();
+  await viewerPage.goto("/workspace");
+  await expect(viewerPage.getByText("$1,299,300", { exact: true })).toBeVisible();
   expect(
     (
       await page.request.delete(`/api/workspace/${id}/members`, {
@@ -144,6 +148,11 @@ test("complete workspace journey, authorization, transactional sales and accessi
     ).ok(),
   ).toBeTruthy();
   expect((await outsider.get(`/api/workspace/${id}`)).status()).toBe(404);
+  await viewerPage.getByRole("button", { name: "Refresh portfolio" }).click();
+  await expect(viewerPage.getByText("Your perspective starts here.")).toBeVisible();
+  await expect(viewerPage.getByRole("button", { name: "Export report" })).toBeDisabled();
+  await expect(viewerPage.getByText("$1,299,300", { exact: true })).not.toBeVisible();
+  await viewerContext.close();
   await outsider.dispose();
   await page.getByRole("button", { name: "Positions", exact: true }).click();
   await page.getByRole("button", { name: "Add position", exact: true }).click();

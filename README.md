@@ -1,5 +1,7 @@
 # Centurion
 
+[![Validate and deploy](https://github.com/ayushman68/Centurion/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ayushman68/Centurion/actions/workflows/ci.yml)
+
 **Live deployment:** [Open Centurion](https://centurion-blush.vercel.app)
 
 Create an account to explore the workspace. This deployment supports paper trading with sample or manually entered data.

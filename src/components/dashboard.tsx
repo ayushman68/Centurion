@@ -95,11 +95,23 @@ export function Dashboard({ user }: { user: { name: string; email: string } }) {
           if (!r.hasMore) break;
           page++;
         }
+        if (controller.signal.aborted) return;
         setPortfolios(list);
-        setSelected((id) => id || list[0]?.id || "");
-        if (!list.length) setLoading(false);
+        const active = list.some((p) => p.id === selected) ? selected : list[0]?.id || "";
+        setSelected(active);
+        if (!active) {
+          setSnapshot(null);
+          setLoading(false);
+          return;
+        }
+        const data = await api<Snapshot>(`/${active}`, "GET", undefined, controller.signal);
+        if (controller.signal.aborted) return;
+        setSnapshot(data);
+        setError("");
+        setLoading(false);
       } catch (e) {
         if (!controller.signal.aborted) {
+          setSnapshot(null);
           setError(
             e instanceof Error ? e.message : "Could not load portfolios.",
           );
@@ -108,23 +120,6 @@ export function Dashboard({ user }: { user: { name: string; email: string } }) {
       }
     }
     load();
-    return () => controller.abort();
-  }, [revision]);
-  useEffect(() => {
-    if (!selected) return;
-    const controller = new AbortController();
-    api<Snapshot>(`/${selected}`, "GET", undefined, controller.signal)
-      .then((data) => {
-        setSnapshot(data);
-        setLoading(false);
-      })
-      .catch((e) => {
-        if (!controller.signal.aborted) {
-          setError(e.message);
-          setSnapshot(null);
-          setLoading(false);
-        }
-      });
     return () => controller.abort();
   }, [selected, revision]);
   function open(kind: Dialog, h?: Holding) {

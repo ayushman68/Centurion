@@ -41,3 +41,15 @@ The live HTTPS health endpoint returned 200 with status ok and Cache-Control no-
 
 The production database owner credential is excluded from runtime configuration. The application role cannot update/delete/truncate audit records or access schema_migrations. GitHub changes remain on the rebuild branch and draft PR #1; main was preserved. This verification does not certify financial models or replace recovery drills and security review.
 
+
+## GitHub Actions releases
+
+The Validate and deploy Centurion workflow validates every push and pull request against an isolated PostgreSQL service. Production deployment runs only for main after lint, TypeScript, unit tests, a production dependency audit, build, and browser tests pass. It serializes releases, stages a production artifact, checks its database health and login page, then promotes that artifact and checks the public canonical URL.
+
+Create the GitHub production environment with required reviewers and a deployment branch restriction for main. Add VERCEL_TOKEN as an environment secret with access to the existing Centurion Vercel project. Never paste the token into a workflow or chat. Project/team IDs and the exact CLI version are pinned in the workflow. The job fails with a clear setup message if the secret is missing. No production secrets are exposed to pull-request validation, and authentication traces are not uploaded as artifacts.
+
+GitHub Actions is the deployment runner; Vercel hosts the Next.js server and Neon hosts PostgreSQL. GitHub Pages cannot host these server-side authentication and database features. After the rebuild reaches main, use main as the release source. The repository root remains the application root.
+
+Database migrations remain a separate operator step using the direct migration credential; apply reviewed additive migrations before releasing code that needs them. This repair introduces no schema changes. No owner credentials are pulled into the deployment build. Runtime settings remain in Vercel.
+
+If a staged health check fails, the workflow stops before promotion. The previous production deployment stays assigned. After a post-promotion failure, inspect the release and roll back only to a schema-compatible artifact.

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { auth } from "./auth";
 import { db } from "./db";
+import { readJsonBody, RequestBodyError } from "./request-body";
 export class AppError extends Error {
   constructor(
     public status: number,
@@ -26,16 +27,12 @@ export async function body<T>(
   request: Request,
   schema: z.ZodType<T>,
 ): Promise<T> {
-  if (!request.headers.get("content-type")?.startsWith("application/json"))
-    throw new AppError(415, "CONTENT_TYPE", "Send JSON data.");
-  const text = await request.text();
-  if (text.length > 16000)
-    throw new AppError(413, "TOO_LARGE", "Request is too large.");
   try {
-    return schema.parse(JSON.parse(text));
-  } catch (e) {
-    if (e instanceof z.ZodError) throw e;
-    throw new AppError(400, "INVALID_JSON", "Invalid JSON.");
+    return await readJsonBody(request, schema);
+  } catch (error) {
+    if (error instanceof RequestBodyError)
+      throw new AppError(error.status, error.code, error.message);
+    throw error;
   }
 }
 export async function identity(request: Request) {
