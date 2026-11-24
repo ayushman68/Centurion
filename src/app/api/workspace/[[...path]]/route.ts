@@ -16,7 +16,7 @@ const handler = route(async (request) => {
       const { page, limit } = v.pagination(url);
       const rows = (
         await db.query(
-          "SELECT p.id,p.name,p.is_demo,m.role FROM portfolios p JOIN members m ON m.portfolio_id=p.id WHERE m.user_id=$1 ORDER BY p.created_at DESC,p.id LIMIT $2 OFFSET $3",
+          `SELECT p.id,p.name,p.is_demo,m.role FROM portfolios p JOIN members m ON m.portfolio_id=p.id JOIN "user" u ON u.id=m.user_id WHERE m.user_id=$1 AND (m.role='owner' OR u."emailVerified"=true) ORDER BY p.created_at DESC,p.id LIMIT $2 OFFSET $3`,
           [user.id, limit + 1, (page - 1) * limit],
         )
       ).rows;

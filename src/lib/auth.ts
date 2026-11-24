@@ -1,5 +1,9 @@
 import { betterAuth } from "better-auth";
 import { db } from "./db";
+// Vercel overwrites this header at its ingress; never trust arbitrary forwarded
+// headers on other hosts without an explicitly configured trusted proxy.
+const trustedIpHeader = process.env.TRUSTED_IP_HEADER ||
+  (process.env.VERCEL === "1" ? "x-vercel-forwarded-for" : undefined);
 export const auth = betterAuth({
   appName: "Centurion",
   database: db,
@@ -23,9 +27,7 @@ export const auth = betterAuth({
   },
   advanced: {
     ipAddress: {
-      ipAddressHeaders: process.env.TRUSTED_IP_HEADER
-        ? [process.env.TRUSTED_IP_HEADER]
-        : [],
+      ipAddressHeaders: trustedIpHeader ? [trustedIpHeader] : [],
     },
   },
 });

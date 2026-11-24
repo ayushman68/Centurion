@@ -1,9 +1,21 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { Pool } from "pg";
 test("complete workspace journey, authorization, transactional sales and accessibility", async ({
   page,
   playwright,
 }) => {
+  const invalidAuth = await page.request.post("/api/auth/sign-in/email", {
+    data: { email: "nobody@example.com", password: "irrelevant-password" },
+    headers: { Origin: "https://attacker.example" },
+  });
+  expect(invalidAuth.status()).toBe(403);
+  const oversizedAuth = await page.request.post("/api/auth/sign-up/email", {
+    data: { name: "x".repeat(17000) }, headers: { Origin: "http://localhost:3000" },
+  });
+  expect(oversizedAuth.status()).toBe(413);
+  const loginPage = await page.request.get("/login");
+  expect(loginPage.headers()["content-security-policy"]).toContain("frame-ancestors 'none'");
   const suffix = Date.now();
   const email = `owner-${suffix}@example.com`;
   const password = "Test-only-strong-password-31";
@@ -112,6 +124,39 @@ test("complete workspace journey, authorization, transactional sales and accessi
     ).ok(),
   ).toBeTruthy();
   expect((await outsider.get(`/api/workspace/${id}`)).status()).toBe(404);
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString || !["localhost", "127.0.0.1"].includes(new URL(connectionString).hostname))
+    throw new Error("Security fixtures require an isolated local test database.");
+  const testDb = new Pool({ connectionString, max: 1 });
+  try {
+    // An outsider must be rejected before waiting for another user's row lock.
+    const blocker = await testDb.connect();
+    try {
+      await blocker.query("BEGIN");
+      await blocker.query("SELECT id FROM portfolios WHERE id=$1 FOR UPDATE", [id]);
+      expect((await outsider.patch(`/api/workspace/${id}/settings`, {
+        data: { riskLimit: 0.1 }, headers, timeout: 3000,
+      })).status()).toBe(404);
+    } finally {
+      await blocker.query("ROLLBACK");
+      blocker.release();
+    }
+    expect((await page.request.post(`/api/workspace/${id}/members`, {
+      data: { email: otherEmail, role: "viewer" }, headers,
+    })).status()).toBe(404);
+    await outsider.post("/api/auth/update-user", { data: { emailVerified: true }, headers });
+    const claimed = await testDb.query('SELECT "emailVerified" FROM "user" WHERE email=$1', [otherEmail]);
+    expect(claimed.rows[0].emailVerified).toBe(false);
+    // Simulate a legacy grant made before verified-email enforcement.
+    await testDb.query(`INSERT INTO members(portfolio_id,user_id,role) SELECT $1,id,'viewer' FROM "user" WHERE email=$2`, [id, otherEmail]);
+    expect((await outsider.get(`/api/workspace/${id}`)).status()).toBe(404);
+    expect((await (await outsider.get("/api/workspace")).json()).data.items).toEqual([]);
+    // Test-only fixture: the application has no endpoint for setting this flag.
+    await testDb.query('UPDATE "user" SET "emailVerified"=true WHERE email=$1', [otherEmail]);
+  } finally {
+    await testDb.end();
+  }
+
   expect(
     (
       await page.request.post(`/api/workspace/${id}/members`, {

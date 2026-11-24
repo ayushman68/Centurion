@@ -6,6 +6,11 @@ on:
 permissions:
   contents: read
 jobs:
+  security:
+    uses: ./.github/workflows/security.yml
+    permissions:
+      contents: read
+      security-events: write
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -35,7 +40,7 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
-      - run: npm audit --omit=dev --audit-level=high
+      - run: npm audit --audit-level=moderate
       - run: npm run db:migrate:deploy
       - run: npm run build
       - run: npx playwright install --with-deps chromium
@@ -64,7 +69,7 @@ jobs:
 
   deploy:
     name: Deploy production
-    needs: verify
+    needs: [verify, security]
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 20

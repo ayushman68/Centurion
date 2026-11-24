@@ -20,7 +20,7 @@ export async function authorize(
   owner = false,
 ) {
   const { rows } = await client.query(
-    "SELECT p.*,m.role FROM portfolios p JOIN members m ON m.portfolio_id=p.id WHERE p.id=$1 AND m.user_id=$2",
+    `SELECT p.*,m.role FROM portfolios p JOIN members m ON m.portfolio_id=p.id JOIN "user" u ON u.id=m.user_id WHERE p.id=$1 AND m.user_id=$2 AND (m.role='owner' OR u."emailVerified"=true)`,
     [id, userId],
   );
   if (!rows.length)
@@ -42,6 +42,8 @@ async function lock(
   userId: string,
   owner = false,
 ) {
+  // Reject outsiders and read-only members before they can acquire portfolio locks.
+  await authorize(client, id, userId, true, owner);
   await client.query("SELECT id FROM portfolios WHERE id=$1 FOR UPDATE", [id]);
   return authorize(client, id, userId, true, owner);
 }
@@ -287,14 +289,14 @@ export async function setMember(
   return transaction(async (c) => {
     await lock(c, id, userId, true);
     const { rows } = await c.query(
-      'SELECT id FROM "user" WHERE lower(email)=lower($1)',
+      'SELECT id FROM "user" WHERE lower(email)=lower($1) AND "emailVerified"=true',
       [input.email],
     );
     if (!rows.length)
       throw new AppError(
         404,
-        "USER_NOT_FOUND",
-        "Ask this person to create a Centurion account first.",
+        "VERIFIED_ACCOUNT_REQUIRED",
+        "Sharing requires an account with a verified email address.",
       );
     const existing = await c.query(
       "SELECT role FROM members WHERE portfolio_id=$1 AND user_id=$2",

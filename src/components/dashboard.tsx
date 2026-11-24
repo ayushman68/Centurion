@@ -1407,7 +1407,7 @@ function WorkspaceSettings({
         ) : (
           <div className="settings-form">
             <p>
-              Grant access to an existing account. Managers can edit positions
+              Grant access to an account with a verified email address. Managers can edit positions
               and execute paper sales. Viewers can read and export.
             </p>
             <form
