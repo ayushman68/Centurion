@@ -1,32 +1,16 @@
-version: '3.8'
-
 services:
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: centurion-backend-core
-    ports:
-      - "8000:8000"
+  db:
+    image: postgres:18
     environment:
-      - PYTHONUNBUFFERED=1
-      - JWT_SECRET_KEY=centurion-institutional-enterprise-secret-key-2026
-    restart: unless-stopped
+      POSTGRES_USER: centurion
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_DB: centurion
+    ports: ["127.0.0.1:54329:5432"]
+    volumes: ["postgres_data:/var/lib/postgresql"]
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: centurion-frontend-ui
-    ports:
-      - "5173:5173"
-    environment:
-      - VITE_API_URL=http://localhost:8000
-    depends_on:
-      - backend
-    restart: unless-stopped
+      test: ["CMD-SHELL", "pg_isready -U centurion"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+volumes:
+  postgres_data:

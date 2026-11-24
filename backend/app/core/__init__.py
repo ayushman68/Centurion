@@ -1,3 +1,0 @@
-"""
-Centurion Core Package
-"""
