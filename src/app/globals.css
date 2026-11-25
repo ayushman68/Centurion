@@ -2052,3 +2052,19 @@ pre {
   outline: 3px solid #a77d32;
   outline-offset: -3px;
 }
+
+.public-demo { max-width: 1320px; margin: auto; padding: 64px 48px; scroll-margin-top: 24px; }
+.demo-intro { max-width: 700px; margin-bottom: 28px; }
+.demo-intro h2 { font-family: Georgia, serif; font-size: clamp(29px, 4vw, 42px); margin: 12px 0; }
+.demo-intro p { color: var(--muted); margin-bottom: 18px; }
+.demo-allocation { display: flex; height: 16px; margin: 0 24px 20px; overflow: hidden; border-radius: 4px; }
+.demo-caption { text-align: left; padding: 0 24px 16px; color: var(--muted); font-size: 11px; white-space: normal; }
+.public-demo tbody th { background: white; font-size: 11px; }
+.public-demo .scenario-body > .muted { margin: 16px 0; }
+.demo-method { padding: 20px 0; }
+.demo-method p { max-width: 850px; line-height: 1.8; color: var(--muted); margin-top: 12px; font-size: 12px; }
+.demo-cta { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 26px; border: 1px solid var(--line); border-radius: 8px; background: #edf2e9; }
+.demo-cta h3 { font-size: 22px; margin-bottom: 8px; }
+.demo-cta p { max-width: 630px; color: #536359; font-size: 13px; }
+.guest-link { margin-bottom: 24px; }
+@media (max-width: 700px) { .public-demo { padding: 38px 20px; } .demo-cta { align-items: stretch; flex-direction: column; padding: 20px; } .public-demo .metric > strong { font-size: 24px; } }

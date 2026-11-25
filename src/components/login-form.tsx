@@ -74,6 +74,7 @@ export function LoginForm() {
               ? "Start with an empty portfolio or an explicitly labelled sample."
               : "Sign in to put your portfolio in perspective."}
           </p>
+          <Link href="/demo" className="button secondary full guest-link">Try without signing in <ArrowRight size={16} /></Link>
           <form onSubmit={submit}>
             {register && (
               <label>

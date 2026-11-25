@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PublicDemo } from "@/components/public-demo";
 import {
   ArrowUpRight,
   ArrowRight,
@@ -29,7 +30,7 @@ export default function Home() {
           <Brand />
         </Link>
         <Link href="/login" className="button secondary">
-          Open workspace <ArrowUpRight size={16} />
+          Sign in <ArrowUpRight size={16} />
         </Link>
       </header>
       <main id="main">
@@ -47,8 +48,8 @@ export default function Home() {
               paper ledger.
             </p>
             <div className="hero-actions">
-              <Link href="/login?mode=register" className="button">
-                Create your workspace <ArrowRight size={17} />
+              <Link href="#demo" className="button">
+                Explore the demo <ArrowRight size={17} />
               </Link>
               <a href="#approach" className="text-link">
                 Explore the approach ↓
@@ -81,6 +82,7 @@ export default function Home() {
             <div className="visual-grid" />
           </div>
         </section>
+        <PublicDemo />
         <section id="approach" className="approach">
           <div className="section-intro">
             <span className="eyebrow">ONE WORKSPACE. A CLEARER VIEW.</span>
