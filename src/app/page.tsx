@@ -1,121 +1,46 @@
 import Link from "next/link";
+import { ArrowRight, LayoutDashboard, Network, SlidersHorizontal, Users, ShieldCheck, ChartNoAxesCombined, BookOpen, CircleHelp } from "lucide-react";
+import { PublicDemo } from "@/components/public-demo";
+import { PublicHeader, PublicFooter } from "@/components/public-header";
 import { sampleHoldings, sampleCash, sampleMoney } from "@/lib/sample-portfolio";
 import { calculateRisk } from "@/lib/risk";
-import { PublicDemo } from "@/components/public-demo";
-import {
-  ArrowUpRight,
-  ArrowRight,
-  Activity,
-  Layers,
-  ShieldCheck,
-} from "lucide-react";
-import { Brand } from "@/components/brand";
-export const metadata = { alternates: { canonical: "/" } };
+import "./public-site.css";
+
+export const metadata = { title: "Portfolio Welcome Center", alternates: { canonical: "/" } };
+const shortcuts = [
+  { title: "Getting Started", href: "#getting-started", Icon: LayoutDashboard },
+  { title: "Account Structure", href: "#account-structure", Icon: Network },
+  { title: "Sample Portfolio", href: "#demo", Icon: ChartNoAxesCombined },
+  { title: "Market Scenarios", href: "#demo-scenario", Icon: SlidersHorizontal },
+  { title: "Team Access", href: "#configuration", Icon: Users },
+  { title: "Account Security", href: "#security", Icon: ShieldCheck },
+  { title: "Risk Methodology", href: "#methodology", Icon: BookOpen },
+  { title: "Support Resources", href: "#resources", Icon: CircleHelp },
+];
 export default function Home() {
   const sample = calculateRisk(sampleHoldings, sampleCash);
-  return (
-    <div className="landing premium-home">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            name: "Centurion",
-            url: process.env.BETTER_AUTH_URL || "http://localhost:3000",
-            description:
-              "A portfolio risk analysis and paper trading workspace.",
-          }).replace(/</g, "\\u003c"),
-        }}
-      />
-      <header className="public-header">
-        <Link href="/" aria-label="Centurion home">
-          <Brand />
-        </Link>
-        <nav className="public-nav" aria-label="Main navigation"><a href="#demo" className="text-link">Sample portfolio</a><Link href="/login" className="button secondary">
-          Sign in <ArrowUpRight size={16} />
-        </Link></nav>
-      </header>
-      <main id="main">
-        <section className="hero">
-          <div>
-            <span className="eyebrow">PORTFOLIO INTELLIGENCE, IN PERSPECTIVE</span>
-            <h1>
-              A clearer view.
-              <br />
-              <em>A considered next move.</em>
-            </h1>
-            <p>
-              See where your portfolio stands. Explore its exposures, test your assumptions, and make your next paper trade with context.
-            </p>
-            <div className="hero-actions">
-              <Link href="#demo" className="button">
-                Explore the demo <ArrowRight size={17} />
-              </Link>
-              <a href="#approach" className="text-link">
-                Explore the approach ↓
-              </a>
-            </div>
-            <span className="fine-print">
-              Paper trading only. No brokerage connection or real-money
-              execution.
-            </span>
-          </div>
-          <aside className="portfolio-preview" aria-label="Sample portfolio overview">
-            <div className="preview-top"><span>THE CENTURION SAMPLE</span><span className="preview-badge">Fictional data</span></div>
-            <div className="preview-value"><span>Total portfolio value</span><strong>{sampleMoney(sample.nav)}</strong><p>USD · {sampleHoldings.length} holdings + cash</p></div>
-            <div className="preview-allocation" aria-hidden="true">{sampleHoldings.map(h => <span key={h.symbol} style={{flex: h.quantity * h.price, background: h.color}} />)}<span style={{flex: sampleCash, background:"#d5c6a3"}} /></div>
-            <div className="preview-rows">{sampleHoldings.map(h => <div key={h.symbol}><span>{h.name}</span><strong>{sampleMoney(h.quantity * h.price)}</strong><small>{h.quantity * h.price / sample.nav * 100}%</small></div>)}<div><span>Cash reserve</span><strong>{sampleMoney(sampleCash)}</strong><small>15%</small></div></div>
-            <a href="#demo" className="preview-link">Explore this portfolio <ArrowRight size={16} /></a>
-            <p className="preview-note">Illustrative holdings. No live market prices.</p>
-          </aside>
-        </section>
-        <PublicDemo />
-        <section id="approach" className="approach">
-          <div className="section-intro">
-            <span className="eyebrow">ONE WORKSPACE. A CLEARER VIEW.</span>
-            <h2>Built around the decisions that matter.</h2>
-          </div>
-          <div className="feature-grid">
-            {[
-              {
-                Icon: Layers,
-                n: "01",
-                title: "See the whole portfolio",
-                text: "Keep positions, cash, and manually marked prices together. Every figure has a clear source.",
-              },
-              {
-                Icon: Activity,
-                n: "02",
-                title: "Put downside in context",
-                text: "Explore Gaussian risk estimates and transparent price-shock scenarios before changing exposure.",
-              },
-              {
-                Icon: ShieldCheck,
-                n: "03",
-                title: "Act with accountability",
-                text: "Record paper reductions atomically, control team access, and review an append-only event history.",
-              },
-            ].map(({ Icon, n, title, text }) => (
-              <article key={n}>
-                <div>
-                  <Icon size={26} />
-                  <span>{n}</span>
-                </div>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-      </main>
-      <footer className="public-footer">
-        <Brand />
-        <span>
-          Designed for deliberate decisions. No regulatory certification is
-          claimed.
-        </span>
-      </footer>
-    </div>
-  );
+  return <div className="landing institutional-site">
+    <PublicHeader />
+    <main id="main">
+      <section className="welcome-hero">
+        <div className="welcome-copy"><span className="institutional-eyebrow">CENTURION / PORTFOLIO INTELLIGENCE</span><h1>Portfolio Welcome Center</h1><p>Understand portfolio exposure, explore risk, and keep your paper-trading decisions in one place.</p><p>Get to know your workspace before creating an account. Explore the sample holdings, adjust a market scenario, and see how the numbers respond.</p><div className="welcome-actions"><a href="#demo" className="button">Explore the demo <ArrowRight size={16} /></a><a href="#getting-started" className="welcome-text-link">Getting started →</a></div><span className="welcome-note">No sign-in needed for the demo. Paper trading only.</span></div>
+        <aside className="welcome-sample" aria-label="Sample portfolio overview"><div className="sample-heading"><span>PORTFOLIO SNAPSHOT</span><span className="sample-label">FICTIONAL DATA</span></div><span className="sample-total-label">Total portfolio value</span><strong className="sample-total">{sampleMoney(sample.nav)}</strong><p>USD · Four holdings · 15% cash</p><div className="sample-split"><div><span>Invested</span><strong>{sampleMoney(sample.invested)}</strong></div><div><span>Cash reserve</span><strong>{sampleMoney(sampleCash)}</strong></div></div><div className="sample-holdings">{sampleHoldings.map(h => <div key={h.symbol}><span>{h.name}</span><strong>{sampleMoney(h.quantity * h.price)}</strong><span>{h.quantity * h.price / sample.nav * 100}%</span></div>)}</div><a href="#demo" className="welcome-text-link">View holdings and scenarios <ArrowRight size={14} /></a></aside>
+      </section>
+      <nav className="section-directory" aria-label="Explore the welcome center">{shortcuts.map(({title,href,Icon})=><a key={href} href={href}><Icon size={32} strokeWidth={1.2} aria-hidden="true"/><span>{title}</span></a>)}</nav>
+      <section id="getting-started" className="resource-section getting-started">
+        <div className="workspace-illustration" role="img" aria-label="Three steps: explore sample data, create a portfolio, review scenarios"><div className="illustration-heading"><LayoutDashboard size={20}/><span>YOUR CENTURION WORKSPACE</span></div><div className="illustration-total"><small>Start with a clearer view</small><strong>Explore. Understand. Decide.</strong></div><ol><li><span>01</span><div><strong>Explore the sample</strong><small>No account needed</small></div></li><li><span>02</span><div><strong>Create your portfolio</strong><small>Holdings, prices, and cash</small></div></li><li><span>03</span><div><strong>Test your assumptions</strong><small>Scenarios and paper decisions</small></div></li></ol></div>
+        <div><h2>Getting Started</h2><p>Centurion brings holdings, cash, risk estimates, and a paper-trading ledger into a single workspace. Begin with the public sample, then create a private portfolio when you are ready to work with your own numbers.</p><div className="resource-callout"><strong>Your first steps in Centurion</strong><div><a href="#demo">Explore sample <ArrowRight size={13}/></a><span aria-hidden="true">|</span><a href="#methodology">Read methodology <ArrowRight size={13}/></a></div></div><div className="resource-actions"><a href="#account-structure" className="button secondary">Learn more</a><Link href="/login" className="button">Sign in</Link></div></div>
+      </section>
+      <section id="account-structure" className="resource-section">
+        <h2>Account Structure</h2><div className="resource-two-col"><div><h3>One workspace. Distinct portfolios.</h3><p>Keep a portfolio’s holdings, cash balance, and paper transactions together. Each portfolio has its own access permissions so you can separate individual research from collaborative work.</p></div><div><h3>Clear roles for collaboration</h3><p>Owners manage access and settings. Editors can update holdings and record paper transactions. Viewers can inspect a shared portfolio without changing it. Shared access requires a verified email account.</p></div></div>
+        <div className="structure-diagram" aria-label="Workspace structure"><div className="structure-root"><Users size={22}/> Your account</div><div className="structure-branches"><div><LayoutDashboard size={25}/><strong>Personal portfolio</strong><span>Your holdings and cash</span></div><div><Network size={25}/><strong>Shared portfolio</strong><span>Owner · Editor · Viewer</span></div><div><BookOpen size={25}/><strong>Paper ledger</strong><span>Recorded portfolio events</span></div></div></div>
+      </section>
+      <PublicDemo />
+      <section id="configuration" className="resource-section"><h2>Configuring Your Workspace</h2><div className="resource-two-col"><div><h3>Holdings and cash</h3><p>Create an empty portfolio or start from a labeled sample. Enter quantities, costs, manually marked prices, and volatility assumptions. Update the inputs as your research changes.</p><Link href="/login?mode=register" className="resource-link">Create a portfolio <ArrowRight size={16}/></Link></div><div><h3>User access rights</h3><p>Assign the appropriate role to verified collaborators and revoke access when it is no longer needed. Personal portfolios remain private until you explicitly share them.</p><Link href="/workspace" className="resource-link">Open your workspace <ArrowRight size={16}/></Link></div></div></section>
+      <section id="methodology" className="resource-section"><h2>Risk &amp; Performance</h2><div className="resource-two-col"><div><h3>Transparent risk estimates</h3><p>Daily value at risk uses a zero-mean Gaussian model and a constant pairwise correlation of 0.35. The sample uses chosen volatility assumptions, not live market observations. Losses can exceed model estimates.</p><a href="#demo" className="resource-link">Inspect the sample estimates <ArrowRight size={16}/></a></div><div><h3>Explore price shocks</h3><p>Apply a hypothetical price move to all invested holdings and see the effect on total value. Cash stays unchanged. This simple scenario helps explain exposure; it is not a forecast.</p><a href="#demo-scenario" className="resource-link">Try a market scenario <ArrowRight size={16}/></a></div></div></section>
+      <section id="security" className="resource-section"><h2>Account Security</h2><div className="resource-two-col"><div><ShieldCheck className="resource-icon" size={34}/><h3>Private by default</h3><p>Sign-in protects personal portfolio data and all account changes. The public demo uses a separate fictional dataset and never reads another user’s portfolio.</p></div><div><h3>Controlled access</h3><p>Permissions are checked on portfolio requests. Shared recipients must have verified email addresses. Email verification delivery and password recovery are not currently enabled, so new accounts cannot yet receive shared access.</p><a href="#resources" className="resource-link">Read account FAQs <ArrowRight size={16}/></a></div></div></section>
+      <section id="resources" className="resource-section support-section"><h2>Support Resources</h2><div className="resource-two-col"><div><h3>Frequently asked questions</h3><details><summary>Do I need an account to explore?</summary><p>No. The homepage and demo include fictional holdings, allocation, and interactive scenarios. Sign in only when you want to save your own portfolios.</p></details><details><summary>Does Centurion place real trades?</summary><p>No. All trading is simulated. Centurion does not connect to a brokerage or move real money.</p></details><details><summary>Are these live market prices?</summary><p>No. Sample prices are fictional, and portfolio prices are manually entered. They are not a live market feed.</p></details></div><div><h3>Explore the platform</h3><p>Try the public portfolio, review its assumptions, or inspect the project documentation for setup and current capabilities.</p><div className="support-links"><Link href="/demo">Open the public demo <ArrowRight size={16}/></Link><a href="https://github.com/ayushman68/Centurion">Read project documentation <ArrowRight size={16}/></a><Link href="/login">Return to your account <ArrowRight size={16}/></Link></div></div></div></section>
+    </main>
+    <PublicFooter />
+  </div>;
 }
