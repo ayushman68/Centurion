@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronDown, ArrowUpRight, Menu } from "lucide-react";
 import { Brand } from "./brand";
+import { PublicNavMenu } from "./public-nav-menu";
 
 export function PublicHeader() {
   return <header className="institutional-header">
@@ -9,11 +10,11 @@ export function PublicHeader() {
       <Link href="/" aria-label="Centurion home"><Brand /></Link>
       <nav className="desktop-links" aria-label="Main navigation">
         <Link href="/#getting-started">Why Centurion</Link>
-        <details className="nav-dropdown"><summary>Platform <ChevronDown size={13} /></summary><div><Link href="/demo">Sample portfolio</Link><Link href="/#methodology">Risk methodology</Link><Link href="/#account-structure">Account structure</Link></div></details>
+        <PublicNavMenu className="nav-dropdown" label={<>Platform <ChevronDown size={13} /></>}><div><Link href="/demo">Sample portfolio</Link><Link href="/#methodology">Risk methodology</Link><Link href="/#account-structure">Account structure</Link></div></PublicNavMenu>
         <Link href="/#security">Security</Link><Link href="/#resources">Resources</Link>
       </nav>
       <div className="header-actions"><Link href="/login" className="button secondary">Sign in</Link><Link href="/login?mode=register" className="button">Open account <ArrowUpRight size={14} /></Link></div>
-      <details className="mobile-menu"><summary><Menu size={20} /> Menu</summary><nav aria-label="Mobile navigation"><Link href="/#getting-started">Getting started</Link><Link href="/demo">Sample portfolio</Link><Link href="/#account-structure">Account structure</Link><Link href="/#security">Security</Link><Link href="/#resources">Resources</Link><Link href="/login?mode=register">Open account</Link></nav></details>
+      <PublicNavMenu className="mobile-menu" label={<><Menu size={20} /> Menu</>}><nav aria-label="Mobile navigation"><Link href="/#getting-started">Getting started</Link><Link href="/demo">Sample portfolio</Link><Link href="/#account-structure">Account structure</Link><Link href="/#security">Security</Link><Link href="/#resources">Resources</Link><Link href="/login?mode=register">Open account</Link></nav></PublicNavMenu>
     </div>
   </header>;
 }
