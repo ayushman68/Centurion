@@ -4,6 +4,12 @@ test("guests explore scenarios without accessing private portfolios", async ({ p
   const workspaceRequests: string[] = [];
   page.on("request", req => { if (req.url().includes("/api/workspace")) workspaceRequests.push(req.url()); });
   await page.goto("/");
+  await expect(page.getByRole("complementary", { name: "Sample portfolio overview" })).toContainText("$100,000");
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
+  }
   await page.getByRole("link", { name: "Explore the demo" }).click();
   await expect(page.getByRole("heading", { name: "Your first look inside Centurion." })).toBeVisible();
   await expect(page.getByTestId("demo-value")).toHaveText("$91,500");

@@ -2137,3 +2137,5 @@ pre {
   .public-demo .scenario-result strong { font-size:26px; }
   .demo-cta { padding:24px; }
 }
+
+.public-demo .metric > span { color: #4f6059; }
