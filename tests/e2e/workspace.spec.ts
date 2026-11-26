@@ -20,6 +20,13 @@ test("complete workspace journey, authorization, transactional sales and accessi
   const email = `owner-${suffix}@example.com`;
   const password = "Test-only-strong-password-31";
   await page.goto("/login?mode=register");
+  await expect(page.locator(".auth-layout")).toHaveCSS("color-scheme", "dark");
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
+  }
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page.getByLabel("Full name").fill("Alex Morgan");
   await page.getByLabel("Email address").fill(email);
   await page.getByLabel("Password", { exact: true }).fill(password);
@@ -30,6 +37,9 @@ test("complete workspace journey, authorization, transactional sales and accessi
   await page
     .getByRole("button", { name: "Create portfolio", exact: true })
     .click();
+  await expect(page.locator(".workspace")).toHaveCSS("color-scheme", "dark");
+  await expect(page.getByRole("dialog")).toHaveCSS("background-color", "rgb(21, 29, 42)");
+  expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
   await page.getByLabel("Portfolio name").fill("Core equity strategy");
   await page.getByLabel("Use sample positions").check();
   await page

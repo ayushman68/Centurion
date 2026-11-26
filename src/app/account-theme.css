@@ -1,0 +1,81 @@
+/* Shared account surfaces: keep the public site's dark identity after sign-in. */
+.account-theme {
+  --ink: #f4f5f7; --navy: #111722; --green: #c91835;
+  --muted: #b8c3d5; --line: #354153; --canvas: #0b101b;
+  --paper: #151d2a; --gold: #a9bfff;
+  --positive: #8bdfb5; --negative: #ff91a0;
+  color-scheme: dark; color: var(--ink); background: var(--canvas);
+  font-family: Arial, Helvetica, sans-serif;
+}
+.account-theme :is(h1,h2,h3) { font-family: Arial, Helvetica, sans-serif; }
+.account-theme :is(input,select) { background: #0d1421; border-color: #526078; color: var(--ink); border-radius: 4px; }
+.account-theme input::placeholder { color: #9eacc1; }
+.account-theme input:-webkit-autofill { -webkit-text-fill-color: #f4f5f7; -webkit-box-shadow: 0 0 0 1000px #0d1421 inset; caret-color: #fff; }
+.account-theme :is(button,a,input,select,summary):focus-visible { outline-color: #a9caff; }
+.account-theme .button { background: #c91835; border-color: #c91835; color: #fff; border-radius: 3px; }
+.account-theme .button:hover:not(:disabled) { background: #aa102a; border-color: #aa102a; }
+.account-theme .button.secondary, .account-theme .button.light { background: #1b2535; border-color: #526078; color: #eef2fb; }
+.account-theme .button.secondary:hover:not(:disabled), .account-theme .button.light:hover:not(:disabled) { background: #2a3549; border-color: #7788a4; }
+.account-theme .text-link, .account-theme summary { color: #ff9aaa; }
+.account-theme .icon-button:hover { background: #2a3549; }
+.account-theme .brand { color: #fff; letter-spacing: .07em; }
+.account-theme .brand-mark { color: #ff526c; background: transparent; border: 0; border-radius: 0; }
+.account-theme .brand-sub { color: #bfc9da; }
+.account-theme .pill { color: #d3def0; background: #222e42; border-color: #4d607b; }
+.account-theme .notice.success { background: #142e28; color: #b4efd0; border-color: #3d7560; }
+.account-theme .notice.error { background: #371d29; color: #ffc1cd; border-color: #945166; }
+.account-theme .notice.info { background: #1d2b43; color: #c5dbff; border-color: #4b678d; }
+.account-theme.auth-layout { min-height: 100svh; }
+.account-theme .auth-story { background: radial-gradient(ellipse at 75% 55%,#1b2851 0%,#0b1225 45%,#050814 90%); border-right: 1px solid var(--line); position: relative; isolation: isolate; overflow: hidden; }
+.account-theme .auth-story::before { content: ""; position: absolute; z-index: -1; width: 360px; height: 360px; right: -150px; top: 28%; border: 1px solid #546dac55; transform: rotate(28deg); box-shadow: 0 0 0 48px #546dac12,0 0 0 96px #546dac09; pointer-events: none; }
+.account-theme .auth-story h1 { font-size: clamp(38px,4vw,60px); font-weight: 500; letter-spacing: -.045em; }
+.account-theme .auth-story :is(p,.eyebrow,.auth-note) { color: #b8c7e5; }
+.account-theme .auth-panel { background: radial-gradient(ellipse at top right,#182137,#0c111d 65%); }
+.account-theme .auth-card { max-width: 420px; padding: 30px; background: #151d2a; border: 1px solid #354153; border-top: 2px solid #d62b49; border-radius: 8px; box-shadow: 0 24px 70px #0004; }
+.account-theme .auth-card h2 { color: #f4f5f7; letter-spacing: -.035em; }
+.account-theme .auth-card form { background: transparent; }
+.account-theme .sidebar { background: #0e1420; border-right: 1px solid var(--line); color: #edf2fb; }
+.account-theme .workspace-label, .account-theme .nav-item { color: #b8c3d5; }
+.account-theme .nav-item:hover { background: #1c2638; color: #fff; }
+.account-theme .nav-item.active { background: #342030; color: #fff; box-shadow: inset 3px 0 #ef4562; }
+.account-theme .nav-dot { background: #ff6c84; }
+.account-theme .paper-note { background: #172133; border-color: #354153; }
+.account-theme .paper-note svg { color: #9cbbff; }
+.account-theme .paper-note p, .account-theme .user-row small { color: #b8c3d5; }
+.account-theme .user-row { border-color: var(--line); }
+.account-theme .avatar { background: #293958; color: #dce7ff; }
+.account-theme .topbar { background: #111925; }
+.account-theme .mode-badge { color: #b5c9ed; }
+.account-theme .mode-badge > span, .account-theme .status-dot { background: #8bdfb5; }
+.account-theme .portfolio-toolbar, .account-theme .metric, .account-theme .panel { background: var(--paper); border-color: var(--line); }
+.account-theme .portfolio-select select { background: #151d2a; }
+.account-theme .portfolio-icon, .account-theme .empty-symbol, .account-theme .event-icon { background: #24324b; color: #bed2ff; }
+.account-theme .metric:first-child { background: linear-gradient(125deg,#212a43,#151d2a); border-top: 2px solid #d62b49; }
+.account-theme .metric > small, .account-theme .workspace-footer { color: var(--muted); }
+.account-theme .donut > div { background: var(--paper); }
+.account-theme .allocation-legend > div, .account-theme .panel-bottom, .account-theme .toolbar-actions { border-color: var(--line); }
+.account-theme .risk-panel { background: linear-gradient(140deg,#202d4c,#171e32); border: 1px solid #425778; color: #f4f5f7; }
+.account-theme .risk-panel :is(p,small,.eyebrow,.risk-scale) { color: #c6d3e9; }
+.account-theme .risk-panel-top svg { color: #a9c5ff; }
+.account-theme .risk-status { color: #b0ebce; }
+.account-theme .risk-status.breached { color: #ffc19c; }
+.account-theme .risk-meter { background: #3d4b65; }
+.account-theme .risk-meter > span { background: #a9bfff; }
+.account-theme th { background: #1e293b; color: #c4d0e3; border-color: var(--line); }
+.account-theme td { border-color: var(--line); }
+.account-theme .asset-icon { background: #202c41; font-family: inherit; }
+.account-theme .chip { background: #202c40; color: #d4def0; border-color: #536580; }
+.account-theme .chip.selected { background: #bd1934; color: #fff; border-color: #ed5670; }
+.account-theme .range { accent-color: #f0647c; background: transparent; }
+.account-theme .scenario-bars i { background: #8dacf0; }
+.account-theme .scenario-bars i.after { background: #e45b7a; }
+.account-theme pre { background: #0d1421; color: #d6e2f7; }
+.account-theme .skeleton { background: linear-gradient(90deg,#1b2638,#2b3850,#1b2638); background-size: 200% 100%; }
+.account-theme .modal { background: #151d2a; border-color: #536580; color: var(--ink); box-shadow: 0 25px 100px #0008; }
+.account-theme .modal::backdrop { background: #030713b8; }
+@media(max-width:700px) {
+  .account-theme .auth-story { border-right: 0; border-bottom: 1px solid var(--line); }
+  .account-theme .auth-panel { padding: 30px 20px; }
+  .account-theme .auth-card { padding: 24px 20px; }
+  .account-theme .sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
+}

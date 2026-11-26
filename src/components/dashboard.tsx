@@ -49,12 +49,12 @@ const nav = [
   { name: "Settings", Icon: Settings },
 ] as const;
 const colors = [
-  "#b2c7bf",
-  "#183e3b",
-  "#c4aa77",
-  "#7f929f",
-  "#d1d6ce",
-  "#606f64",
+  "#83aaff",
+  "#a795f0",
+  "#f09aa9",
+  "#66c9d4",
+  "#d2dff5",
+  "#90bc9e",
 ];
 export function Dashboard({ user }: { user: { name: string; email: string } }) {
   const router = useRouter();
@@ -209,7 +209,7 @@ export function Dashboard({ user }: { user: { name: string; email: string } }) {
     snapshot?.holdings.filter((h) => h.symbol.includes(search.toUpperCase())) ||
     [];
   return (
-    <div className="workspace">
+    <div className="workspace account-theme">
       <aside className="sidebar">
         <Link href="/" aria-label="Centurion home">
           <Brand />
@@ -520,7 +520,7 @@ export function Dashboard({ user }: { user: { name: string; email: string } }) {
                           )}
                           <div>
                             <span className="legend-label">
-                              <i style={{ background: "#e5e9e5" }} />
+                              <i style={{ background: "#354153" }} />
                               Cash
                             </span>
                             <strong>{money(r.cash)}</strong>
@@ -1057,7 +1057,7 @@ function Allocation({
     const start = weights.slice(0, i).reduce((a, b) => a + b, 0);
     return `${colors[i % colors.length]} ${start}% ${start + weight}%`;
   });
-  stops.push(`#e5e9e5 ${weights.reduce((a, b) => a + b, 0)}% 100%`);
+  stops.push(`#354153 ${weights.reduce((a, b) => a + b, 0)}% 100%`);
   return (
     <div
       className="donut"

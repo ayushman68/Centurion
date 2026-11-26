@@ -40,7 +40,7 @@ export function LoginForm() {
     }
   }
   return (
-    <main id="main" className="auth-layout">
+    <main id="main" className="auth-layout account-theme">
       <div className="auth-story">
         <Link href="/">
           <Brand />
