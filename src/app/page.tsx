@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { sampleHoldings, sampleCash, sampleMoney } from "@/lib/sample-portfolio";
+import { calculateRisk } from "@/lib/risk";
 import { PublicDemo } from "@/components/public-demo";
 import {
   ArrowUpRight,
@@ -10,8 +12,9 @@ import {
 import { Brand } from "@/components/brand";
 export const metadata = { alternates: { canonical: "/" } };
 export default function Home() {
+  const sample = calculateRisk(sampleHoldings, sampleCash);
   return (
-    <div className="landing">
+    <div className="landing premium-home">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -29,23 +32,21 @@ export default function Home() {
         <Link href="/" aria-label="Centurion home">
           <Brand />
         </Link>
-        <Link href="/login" className="button secondary">
+        <nav className="public-nav" aria-label="Main navigation"><a href="#demo" className="text-link">Sample portfolio</a><Link href="/login" className="button secondary">
           Sign in <ArrowUpRight size={16} />
-        </Link>
+        </Link></nav>
       </header>
       <main id="main">
         <section className="hero">
           <div>
-            <span className="eyebrow">CLARITY BEFORE ACTION</span>
+            <span className="eyebrow">PORTFOLIO INTELLIGENCE, IN PERSPECTIVE</span>
             <h1>
-              Understand your risk.
+              A clearer view.
               <br />
-              <em>Own your next move.</em>
+              <em>A considered next move.</em>
             </h1>
             <p>
-              A focused workspace to understand portfolio exposure, explore
-              downside scenarios, and test protective actions with a traceable
-              paper ledger.
+              See where your portfolio stands. Explore its exposures, test your assumptions, and make your next paper trade with context.
             </p>
             <div className="hero-actions">
               <Link href="#demo" className="button">
@@ -60,27 +61,14 @@ export default function Home() {
               execution.
             </span>
           </div>
-          <div
-            className="hero-visual"
-            aria-label="Illustration of portfolio exposure analysis"
-          >
-            <div className="visual-top">
-              <span>THE BIG PICTURE</span>
-              <span className="pill">ILLUSTRATIVE</span>
-            </div>
-            <div className="orb">
-              <ShieldCheck size={65} strokeWidth={1} />
-            </div>
-            <div className="visual-caption">
-              <span>
-                Make uncertainty
-                <br />
-                more understandable.
-              </span>
-              <Activity size={30} />
-            </div>
-            <div className="visual-grid" />
-          </div>
+          <aside className="portfolio-preview" aria-label="Sample portfolio overview">
+            <div className="preview-top"><span>THE CENTURION SAMPLE</span><span className="preview-badge">Fictional data</span></div>
+            <div className="preview-value"><span>Total portfolio value</span><strong>{sampleMoney(sample.nav)}</strong><p>USD · {sampleHoldings.length} holdings + cash</p></div>
+            <div className="preview-allocation" aria-hidden="true">{sampleHoldings.map(h => <span key={h.symbol} style={{flex: h.quantity * h.price, background: h.color}} />)}<span style={{flex: sampleCash, background:"#d5c6a3"}} /></div>
+            <div className="preview-rows">{sampleHoldings.map(h => <div key={h.symbol}><span>{h.name}</span><strong>{sampleMoney(h.quantity * h.price)}</strong><small>{h.quantity * h.price / sample.nav * 100}%</small></div>)}<div><span>Cash reserve</span><strong>{sampleMoney(sampleCash)}</strong><small>15%</small></div></div>
+            <a href="#demo" className="preview-link">Explore this portfolio <ArrowRight size={16} /></a>
+            <p className="preview-note">Illustrative holdings. No live market prices.</p>
+          </aside>
         </section>
         <PublicDemo />
         <section id="approach" className="approach">

@@ -3,14 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { calculateRisk } from "@/lib/risk";
 
-const holdings = [
-  { name: "Atlas Technology", symbol: "ATLS", quantity: 100, price: 200, cost: 180, volatility: 0.025, color: "#244b43" },
-  { name: "Harbor Healthcare", symbol: "HBR", quantity: 200, price: 100, cost: 95, volatility: 0.018, color: "#7a8e72" },
-  { name: "Summit Industrials", symbol: "SUM", quantity: 100, price: 150, cost: 140, volatility: 0.022, color: "#bda56e" },
-  { name: "Cedar Consumer", symbol: "CDR", quantity: 300, price: 100, cost: 105, volatility: 0.02, color: "#5e7e8a" },
-];
-const cash = 15000;
-const money = (value: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value);
+import { sampleHoldings as holdings, sampleCash as cash, sampleMoney as money } from "@/lib/sample-portfolio";
 
 export function PublicDemo() {
   const [shock, setShock] = useState(-10);
@@ -20,7 +13,7 @@ export function PublicDemo() {
       <div className="demo-intro">
         <span className="eyebrow">EXPLORE WITHOUT AN ACCOUNT</span>
         <h2 id="demo-title">Your first look inside Centurion.</h2>
-        <p>Explore a fictional portfolio and change the market scenario. No sign-in required.</p>
+        <p>A complete view, before you commit. Inspect the holdings and stress-test a fictional portfolio—no account required.</p>
         <span className="pill">SAMPLE DATA · NOT LIVE PRICES</span>
       </div>
       <div className="metric-grid">
@@ -38,7 +31,7 @@ export function PublicDemo() {
           </div>
           <div className="table-scroll" tabIndex={0} role="region" aria-label="Sample holdings table">
             <table><caption className="demo-caption">Fictional holdings and manually chosen example prices</caption><thead><tr><th scope="col">Asset</th><th scope="col" className="numeric">Shares</th><th scope="col" className="numeric">Price</th><th scope="col" className="numeric">Value</th></tr></thead>
-              <tbody>{holdings.map(h => <tr key={h.symbol}><th scope="row">{h.name} ({h.symbol})</th><td className="numeric">{h.quantity}</td><td className="numeric">{money(h.price)}</td><td className="numeric">{money(h.quantity * h.price)}</td></tr>)}</tbody>
+              <tbody>{holdings.map(h => <tr key={h.symbol}><th scope="row"><span className="demo-asset"><span className="demo-monogram" aria-hidden="true">{h.symbol.slice(0,1)}</span><span>{h.name}<small>{h.symbol}</small></span></span></th><td className="numeric">{h.quantity}</td><td className="numeric">{money(h.price)}</td><td className="numeric">{money(h.quantity * h.price)}</td></tr>)}</tbody>
             </table>
           </div>
         </section>
