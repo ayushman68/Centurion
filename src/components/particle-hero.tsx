@@ -75,9 +75,9 @@ export function ParticleHero() {
       const morph = smooth(clamp((progress - 0.16) / 0.68));
       const scatter = Math.sin(morph * Math.PI);
       const mobile = width < 700;
-      const scale = Math.min(width * (mobile ? 0.25 : 0.2), height * 0.29);
+      const scale = Math.min(width * (mobile ? 0.25 : 0.2), height * 0.23) * (1 - morph * (mobile ? 0.22 : 0.15));
       const cx = width * (mobile ? 0.5 : 0.65);
-      const cy = height * (mobile ? 0.53 : 0.47);
+      const cy = height * (mobile ? 0.53 + morph * 0.05 : 0.47);
       const yaw = 0.5 + elapsed * 0.19 * (1 - morph * 0.8) + tiltX * 0.24;
       const pitch = -0.17 * (1 - morph) + tiltY * 0.12;
       const project = (p: Point) => {
