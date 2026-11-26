@@ -8,7 +8,7 @@ export default function Login() {
   return (
     <Suspense
       fallback={
-        <main id="main" className="center-state">
+        <main id="main" className="center-state account-theme">
           Loading sign-in…
         </main>
       }
