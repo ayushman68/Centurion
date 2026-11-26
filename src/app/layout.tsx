@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { SiteMotion } from "@/components/site-motion";
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.BETTER_AUTH_URL || "http://localhost:3000"),
   title: {
@@ -21,6 +22,7 @@ export default function RootLayout({
           Skip to content
         </a>
         {children}
+        <SiteMotion />
       </body>
     </html>
   );
