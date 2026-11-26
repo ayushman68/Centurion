@@ -10,7 +10,18 @@ test("guests explore scenarios without accessing private portfolios", async ({ p
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([]);
   }
-  await page.getByRole("link", { name: "Explore the demo" }).click();
+  await page.getByText("Menu", { exact: true }).click();
+  await page.getByRole("navigation", { name: "Mobile navigation" }).getByRole("link", { name: "Security", exact: true }).click();
+  await expect(page.locator(".mobile-menu")).not.toHaveAttribute("open", "");
+  await page.getByText("Menu", { exact: true }).click();
+  await page.getByText("Menu", { exact: true }).press("Escape");
+  await expect(page.locator(".mobile-menu")).not.toHaveAttribute("open", "");
+  await page.getByRole("link", { name: "Getting Started", exact: true }).click();
+  await expect(page).toHaveURL(/#getting-started$/);
+  await page.getByRole("link", { name: "Support Resources", exact: true }).last().click();
+  await page.getByText("Do I need an account to explore?", { exact: true }).click();
+  await expect(page.getByText("No. The homepage and demo include fictional holdings", { exact: false })).toBeVisible();
+  await page.getByRole("link", { name: "Explore the demo", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Your first look inside Centurion." })).toBeVisible();
   await expect(page.getByTestId("demo-value")).toHaveText("$91,500");
   await page.getByRole("button", { name: "-30%", exact: true }).click();
