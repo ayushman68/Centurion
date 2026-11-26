@@ -1,3 +1,4 @@
+import { ParticleHero } from "@/components/particle-hero";
 import Link from "next/link";
 import { ArrowRight, LayoutDashboard, Network, SlidersHorizontal, Users, ShieldCheck, ChartNoAxesCombined, BookOpen, CircleHelp } from "lucide-react";
 import { PublicDemo } from "@/components/public-demo";
@@ -22,8 +23,9 @@ export default function Home() {
   return <div className="landing institutional-site">
     <PublicHeader />
     <main id="main">
-      <section className="welcome-hero">
-        <div className="welcome-copy"><span className="institutional-eyebrow">CENTURION / PORTFOLIO INTELLIGENCE</span><h1>Portfolio Welcome Center</h1><p>Understand portfolio exposure, explore risk, and keep your paper-trading decisions in one place.</p><p>Get to know your workspace before creating an account. Explore the sample holdings, adjust a market scenario, and see how the numbers respond.</p><div className="welcome-actions"><a href="#demo" className="button">Explore the demo <ArrowRight size={16} /></a><a href="#getting-started" className="welcome-text-link">Getting started →</a></div><span className="welcome-note">No sign-in needed for the demo. Paper trading only.</span></div>
+      <ParticleHero />
+      <section className="welcome-hero" id="welcome">
+        <div className="welcome-copy"><span className="institutional-eyebrow">CENTURION / PORTFOLIO INTELLIGENCE</span><h2>Portfolio Welcome Center</h2><p>Understand portfolio exposure, explore risk, and keep your paper-trading decisions in one place.</p><p>Get to know your workspace before creating an account. Explore the sample holdings, adjust a market scenario, and see how the numbers respond.</p><div className="welcome-actions"><a href="#demo" className="button">Explore the demo <ArrowRight size={16} /></a><a href="#getting-started" className="welcome-text-link">Getting started →</a></div><span className="welcome-note">No sign-in needed for the demo. Paper trading only.</span></div>
         <aside className="welcome-sample" aria-label="Sample portfolio overview"><div className="sample-heading"><span>PORTFOLIO SNAPSHOT</span><span className="sample-label">FICTIONAL DATA</span></div><span className="sample-total-label">Total portfolio value</span><strong className="sample-total">{sampleMoney(sample.nav)}</strong><p>USD · Four holdings · 15% cash</p><div className="sample-split"><div><span>Invested</span><strong>{sampleMoney(sample.invested)}</strong></div><div><span>Cash reserve</span><strong>{sampleMoney(sampleCash)}</strong></div></div><div className="sample-holdings">{sampleHoldings.map(h => <div key={h.symbol}><span>{h.name}</span><strong>{sampleMoney(h.quantity * h.price)}</strong><span>{h.quantity * h.price / sample.nav * 100}%</span></div>)}</div><a href="#demo" className="welcome-text-link">View holdings and scenarios <ArrowRight size={14} /></a></aside>
       </section>
       <nav className="section-directory" aria-label="Explore the welcome center">{shortcuts.map(({title,href,Icon})=><a key={href} href={href}><Icon size={32} strokeWidth={1.2} aria-hidden="true"/><span>{title}</span></a>)}</nav>

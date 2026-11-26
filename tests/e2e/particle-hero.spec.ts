@@ -1,0 +1,22 @@
+import { test, expect } from "@playwright/test";
+test("particle hero transforms on scroll and supports pausing and reduced motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/");
+  const story = page.locator(".particle-story");
+  const scene = page.locator(".particle-scene");
+  await expect(story).toHaveAttribute("data-motion", "full");
+  await expect(scene).toHaveAttribute("data-phase", "cube");
+  expect(await page.locator(".particle-canvas").evaluate((canvas: HTMLCanvasElement) => canvas.width > 0 && canvas.height > 0)).toBe(true);
+  await page.mouse.move(800, 400);
+  await page.mouse.wheel(0, 1000);
+  await expect(scene).toHaveAttribute("data-phase", "tree");
+  await page.getByRole("button", { name: "Pause animation", exact: true }).click();
+  await expect(story).toHaveAttribute("data-motion", "reduced");
+  await page.getByRole("button", { name: "Play animation", exact: true }).click();
+  await expect(story).toHaveAttribute("data-motion", "full");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(story).toHaveAttribute("data-motion", "reduced");
+  await expect(scene).toHaveAttribute("data-phase", "cube");
+  await page.getByRole("link", { name: "Explore sample portfolio", exact: true }).click();
+  await expect(page.getByTestId("demo-value")).toHaveText("$91,500");
+});
