@@ -2139,3 +2139,5 @@ pre {
 }
 
 .public-demo .metric > span { color: #4f6059; }
+
+.landing { --muted: #4f6059; }
